@@ -143,7 +143,10 @@ export function inspect(path: string): Promise<InspectResult> {
   return native().inspect(path);
 }
 
-/** Cancels a running or queued `encodeAnimated` job; it rejects with code `CANCELLED`. */
+/**
+ * Cancels a running or queued `encodeAnimated` job. `cancel()` itself returns void; the pending
+ * `encodeAnimated` promise for that job id is what rejects, with code `CANCELLED`.
+ */
 export function cancel(jobId: string): void {
   native().cancel(jobId);
 }
