@@ -19,7 +19,8 @@ An Android app for creating, importing, exporting and managing WhatsApp sticker 
 **Out of scope (explicit)**
 
 - Background removal (automatic or manual).
-- Per-frame text/emoji overlays on animated stickers.
+- Any text/emoji overlay on animated stickers (animated or fixed captions).
+- ezgif-style options that WhatsApp fixes anyway: output size, aspect ratio, sound, loop count, encoder method, colour filters, per-frame frame editing.
 - Tenor integration.
 - Play Store release work (privacy policy, store listing, Play-policy permission declarations).
 - Localization (English only).
@@ -81,8 +82,11 @@ src/features/
                  TransformHandles, EditorToolbar, TextStyleSheet, EmojiPickerSheet,
                  UndoRedoControls
                  hooks: useLayerHistory, useCanvasGestures, useExportStatic
-    animated/    AnimatedSourcePreview, FramingOverlay, FitFillToggle, TrimSlider
-                 hooks: useEncodeJob
+    animated/    AnimatedSourcePreview, FramingOverlay, FitFillToggle, TrimControls
+                 (TrimSlider + TimeInputs), SpeedSelector, PlaybackModeSelector,
+                 RotateFlipControls, FpsControl, QualityPrioritySelector,
+                 EffectiveDurationLabel
+                 hooks: useEncodeJob, useAnimatedEditState
     batch/       BatchQueueList, BatchQueueItem
                  hooks: useBatchQueue
   gallery/
@@ -216,37 +220,62 @@ Shipped under `assets/bundled-packs/`, copied into `packs/` on first launch with
 libwebp vendored and built with CMake/NDK; Kotlin orchestration; one pipeline:
 
 ```
-decode frames → crop/fit to 512×512 → trim → encode → measure → retry
+decode (trim window, sampled on the output timeline) → rotate/flip → crop/fit to 512×512
+  → frame cache → build output sequence (speed, reverse/boomerang, fps) → encode → measure → retry
 ```
 
 **Decoders by source**
 
 - GIF — Glide standalone `gifdecoder` (transparency, disposal methods).
 - Animated WebP — libwebp `WebPAnimDecoder` (exact timings).
-- MP4 — `MediaMetadataRetriever.getFrameAtIndex`, sampled at source fps capped at 20 fps.
+- MP4 — `MediaMetadataRetriever.getFrameAtIndex`.
 - Static inputs (PNG/JPG/WebP) — `ImageDecoder`.
 
-**Framing:** normalized crop rect + mode `fill | fit`; `fit` pads onto a transparent 512×512 canvas. Scaling via libwebp's area-averaging rescaler (`WebPPictureRescale`).
+**Transform options (animated)**
+
+| Option | Values | Effect |
+|---|---|---|
+| Trim | `trimStartMs`, `trimEndMs` | source window to use |
+| Speed | 0.5×, 0.75×, 1×, 1.25×, 1.5×, 2× | output duration = window ÷ speed |
+| Playback | `normal`, `reverse`, `boomerang` | boomerang = forward then backward, endpoints not duplicated (≈ 2× duration) |
+| Rotate | 0°, 90°, 180°, 270° | applied before framing |
+| Flip | horizontal, vertical (independent) | applied before framing |
+| FPS | `auto` (source rate, capped at 20) or manual 5–30 | output sampling rate |
+| Priority | `smooth` (default) or `sharp` | what size fitting sacrifices first |
+
+**Effective duration** = (trimEnd − trimStart) ÷ speed × (boomerang ? 2 : 1) must be ≤ 10 s. The editor computes it live and blocks encoding until it fits; the native side re-checks and fails with `INVALID_OPTIONS`.
+
+**Framing:** normalized crop rect (in rotated/flipped coordinates) + mode `fill | fit`; `fit` pads onto a transparent 512×512 canvas. Scaling via libwebp's area-averaging rescaler (`WebPPictureRescale`).
+
+**Frame cache:** the source is decoded **once per job**: frames within the trim window are sampled on the output timeline at the chosen fps, transformed and framed to 512×512 RGBA, and written in forward order to a temp file in `cacheDirectory` (each frame compressed with `Deflater` BEST_SPEED). Reverse and boomerang are index orderings over the cache; fps reduction during size fitting subsamples the cache. No size-fitting pass re-decodes the source. Bounded by effective duration × fps ≤ 10 s × 30 = 300 frames. Free space is checked before starting (`INSUFFICIENT_STORAGE`); the cache is deleted when the job ends (success, failure or cancel).
 
 **Size fitting (animated, limit 500 KB, target ≤ 490 KB)**
 
-1. Binary-search quality 95 → 25 with `allow_mixed`, tuned `kmin`/`kmax`, `method = 6`.
-2. If still too large at quality 25: reduce fps by merging adjacent frame durations; repeat step 1.
-3. Enforce frame duration ≥ 8 ms and total duration ≤ 10 s (trim input).
-4. If still too large at the floor (quality 25, ≥ 5 fps): fail with `TOO_LARGE`.
+Encoder settings on every pass: lossy with alpha, `allow_mixed`, tuned `kmin`/`kmax`, `method = 6`, loop forever. Frame duration ≥ 8 ms enforced.
+
+- `smooth` (keep motion):
+  1. Binary-search quality 95 → 25 at the chosen fps.
+  2. If too large at quality 25, step fps down (merging durations) and repeat step 1.
+- `sharp` (keep detail):
+  1. Binary-search quality 95 → 60 at the chosen fps.
+  2. If too large at quality 60, step fps down and repeat step 1.
+  3. If too large at 5 fps and quality 60, lower the quality floor to 25 and search again at 5 fps.
+- FPS steps: chosen fps → 15 → 12 → 10 → 8 → 5 (skipping steps above the chosen fps).
+- Floor: quality 25 at 5 fps still too large → fail with `TOO_LARGE`.
 
 The search logic lives in a pure Kotlin class with an injectable "encode at quality/fps → size" function so it is unit-testable without libwebp.
 
-**Memory:** frames are streamed into `WebPAnimEncoder`, never all held raw; each pass re-decodes the source. Runs on a background thread, emits progress events, cancellable by job id.
+**Memory:** frames are read from the cache one at a time and streamed into `WebPAnimEncoder`, never all held raw. Runs on a background thread, emits progress events, cancellable by job id.
 
 **JS API**
 
-- `encodeAnimated(opts: { source: string; sourceType: 'gif' | 'webp' | 'mp4'; crop: { x: number; y: number; w: number; h: number }; mode: 'fill' | 'fit'; trimStartMs: number; trimEndMs: number; outPath: string; jobId: string }): Promise<{ sizeBytes: number; frames: number; durationMs: number; quality: number; fps: number }>`; event `onProgress { jobId, pass, fraction }`; `cancel(jobId)`.
+- `encodeAnimated(opts: { source: string; sourceType: 'gif' | 'webp' | 'mp4'; crop: { x: number; y: number; w: number; h: number }; mode: 'fill' | 'fit'; trimStartMs: number; trimEndMs: number; speed: 0.5 | 0.75 | 1 | 1.25 | 1.5 | 2; playback: 'normal' | 'reverse' | 'boomerang'; rotation: 0 | 90 | 180 | 270; flipH: boolean; flipV: boolean; fps: 'auto' | number; priority: 'smooth' | 'sharp'; outPath: string; jobId: string }): Promise<{ sizeBytes: number; frames: number; durationMs: number; quality: number; fps: number }>`; event `onProgress { jobId, stage: 'decode' | 'encode', pass, fraction }`; `cancel(jobId)`.
+- `probe(source: string, sourceType: 'gif' | 'webp' | 'mp4'): Promise<{ width: number; height: number; durationMs: number; fps: number; frameCount: number }>` — feeds the editor's trim bounds and "auto" fps display.
 - `encodeStatic(inputPath: string, outPath: string): Promise<{ sizeBytes: number; quality: number; lossless: boolean }>` — 512×512 input; lossless first, lossy quality search to stay < 100 KB.
 - `makeTrayIcon(inputPath: string, outPath: string): Promise<{ sizeBytes: number }>` — 96×96 PNG < 50 KB.
 - `inspect(path: string): Promise<{ width: number; height: number; animated: boolean; frameCount: number; frameDurationsMs: number[]; sizeBytes: number; format: string }>`.
 
-Error codes: `DECODE_FAILED`, `OUT_OF_MEMORY`, `TOO_LARGE`, `CANCELLED`, `IO_ERROR`.
+Error codes: `DECODE_FAILED`, `OUT_OF_MEMORY`, `TOO_LARGE`, `CANCELLED`, `IO_ERROR`, `INSUFFICIENT_STORAGE`, `INVALID_OPTIONS`.
 
 ## 8. Screens and flows
 
@@ -275,7 +304,14 @@ Multi-select routing: multiple stills → batch queue (default 1:1 crop each, op
 5. Source image + `layers.json` saved to `.src/<stickerId>/` for re-editing.
 
 ### Animated editor (`app/editor/animated`)
-Playing preview with square framing overlay (pinch/pan), fill/fit toggle, range trim slider (max 10 s), encode with progress + cancel, result preview with size/quality/fps, emoji tagging, commit.
+- Playing source preview with square framing overlay (pinch/pan) and fill/fit toggle.
+- **Trim:** range slider plus start/end time inputs (0.01 s precision) with "Use current position" buttons.
+- **Timing:** speed selector (0.5×–2×); playback mode (normal / reverse / boomerang).
+- **Transform:** rotate 90° steps; flip horizontal / vertical. The preview reflects rotate/flip immediately.
+- **Output:** FPS (Auto shows the resolved value, or manual 5–30); priority Smooth / Sharp with one-line explanations.
+- **Effective duration label** (e.g. "7.2 s of 10 s") updates live and turns red with an "Encode" block when over 10 s.
+- Speed and reverse/boomerang are visible only in the encoded result preview (the source preview plays at 1× forward).
+- Encode with staged progress (decoding → encoding pass n) + cancel; result preview with size/quality/fps; "Adjust" returns to the settings with them intact; emoji tagging; commit.
 
 ### Import/Export (`app/import-export`)
 See §9.
@@ -359,8 +395,9 @@ Runtime requests happen only when the Device tab is opened, with a rationale scr
 ## 15. Testing
 
 - **JS (Jest + React Native Testing Library, test-first):** validation rules; `.wastickers` build/parse; Klipy/Giphy adapters against recorded fixtures; packs store and atomic storage; importer keep/fix/skip logic.
-- **Kotlin JVM unit tests:** ContentProvider cursor contents vs WhatsApp column contract; `pack.json` → provider mapping; size-fitting search logic with a fake encoder.
-- **Instrumented (device/emulator):** encoder fixtures (transparent GIF, long GIF, animated WebP, MP4, large PNG) → assert 512×512, size limits, frame timing rules.
+- **Kotlin JVM unit tests:** ContentProvider cursor contents vs WhatsApp column contract; `pack.json` → provider mapping; size-fitting search logic with a fake encoder (both `smooth` and `sharp` paths, floor failure); output-sequence builder (speed, reverse, boomerang endpoint handling, fps subsampling, 8 ms minimum); effective-duration check.
+- **JS:** effective-duration calculation shared by the editor.
+- **Instrumented (device/emulator):** encoder fixtures (transparent GIF, long GIF, animated WebP, MP4, large PNG) → assert 512×512, size limits, frame timing rules; rotate/flip orientation on an asymmetric fixture; boomerang/reverse frame order; frame cache deleted after success, failure and cancel.
 - **Manual QA checklist:** add to WhatsApp and WhatsApp Business; permission flows on Android 13 and 14 (full, partial, denied); share and save-to-folder exports; import of third-party `.wastickers`.
 - `tsc --noEmit` (strict) and ESLint in `npm test`.
 
