@@ -44,6 +44,9 @@ class AnimatedEncoder(
       source.width, source.height, options.rotation, options.flipH, options.flipV, options.crop, options.mode, rescaler,
     )
 
+    // Animated encodes run one at a time on the single encode executor, so any frame-cache file already here
+    // is a leftover from a process that died mid-encode (spec §7 "Frame cache" always-delete contract).
+    FrameCache.sweepStale(cacheDir)
     return FrameCache.create(cacheDir, grid.size, usableSpace = usableSpace).use { cache ->
       grid.sourceTimesMs.forEachIndexed { i, timeMs ->
         token.throwIfCancelled()

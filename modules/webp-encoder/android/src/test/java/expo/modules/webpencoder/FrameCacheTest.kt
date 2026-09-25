@@ -62,4 +62,29 @@ class FrameCacheTest {
       assertThrows(IllegalArgumentException::class.java) { cache.append(IntArray(15)) }
     }
   }
+
+  @Test fun sweepStaleRemovesLeftoverFrameFilesButKeepsSourceCopies() {
+    val dir = File(tmp.root, FrameCache.DIR_NAME).apply { mkdirs() }
+    val stale = File(dir, "frames-old.bin").apply { writeText("leftover") }
+    val source = File(dir, "source-x").apply { writeText("owned by a concurrent probe") }
+    FrameCache.sweepStale(tmp.root)
+    assertFalse(stale.exists())
+    assertTrue(source.exists())
+  }
+
+  @Test fun sweepStaleToleratesAMissingDirectory() {
+    FrameCache.sweepStale(File(tmp.root, "does-not-exist"))
+  }
+
+  @Test fun sweepAllRemovesEverythingInTheDirectory() {
+    val dir = File(tmp.root, FrameCache.DIR_NAME).apply { mkdirs() }
+    File(dir, "frames-old.bin").writeText("leftover")
+    File(dir, "source-x").writeText("leftover copy")
+    FrameCache.sweepAll(tmp.root)
+    assertEquals(emptyList<File>(), cacheDirFiles())
+  }
+
+  @Test fun sweepAllToleratesAMissingDirectory() {
+    FrameCache.sweepAll(File(tmp.root, "does-not-exist"))
+  }
 }

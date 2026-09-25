@@ -74,6 +74,8 @@ class FrameCache private constructor(val file: File, val width: Int, val height:
 
   companion object {
     const val DIR_NAME = "webp-encoder"
+    private const val FRAME_PREFIX = "frames-"
+    private const val FRAME_SUFFIX = ".bin"
     private const val MB = 1024L * 1024
     private const val SAFETY_MARGIN_BYTES = 16 * MB
 
@@ -98,7 +100,36 @@ class FrameCache private constructor(val file: File, val width: Int, val height:
           "Encoding needs about ${needed / MB} MB of free space; only ${available / MB} MB is available.",
         )
       }
-      return FrameCache(File(dir, "frames-${UUID.randomUUID()}.bin"), width, height)
+      return FrameCache(File(dir, "$FRAME_PREFIX${UUID.randomUUID()}$FRAME_SUFFIX"), width, height)
+    }
+
+    /**
+     * Deletes leftover frame-cache files (a previous process was killed mid-encode) in `<cacheDir>/webp-encoder/`.
+     * Never throws. Leaves `source-*` content:// copies alone: probe/inspect run on a separate executor and may
+     * own one concurrently. Safe to call before creating this job's own cache: animated encodes run one at a
+     * time, so no frame cache other than a stale one can exist.
+     */
+    fun sweepStale(cacheDir: File) {
+      try {
+        val dir = File(cacheDir, DIR_NAME)
+        val files = dir.listFiles() ?: return
+        for (f in files) {
+          if (f.isFile && f.name.startsWith(FRAME_PREFIX) && f.name.endsWith(FRAME_SUFFIX)) f.delete()
+        }
+      } catch (_: Exception) {
+        // Best-effort cleanup; a failed sweep must never fail the job.
+      }
+    }
+
+    /** Deletes everything in `<cacheDir>/webp-encoder/` (frame caches and source copies). Never throws. */
+    fun sweepAll(cacheDir: File) {
+      try {
+        val dir = File(cacheDir, DIR_NAME)
+        val files = dir.listFiles() ?: return
+        for (f in files) if (f.isFile) f.delete()
+      } catch (_: Exception) {
+        // Best-effort cleanup; a failed sweep must never fail module creation.
+      }
     }
   }
 }

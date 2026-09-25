@@ -3,6 +3,7 @@ package expo.modules.webpencoder
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -155,6 +156,15 @@ class AnimatedEncoderTest {
       encoder(FakeBackend(), space = { 0L }).encode(options(), source, output, CancelToken()) {}
     }
     assertEquals(0, source.requested.size)
+  }
+
+  @Test fun encodeSweepsAStaleFrameCacheFileButKeepsSourceCopies() {
+    val dir = File(tmp.root, FrameCache.DIR_NAME).apply { mkdirs() }
+    val stale = File(dir, "frames-orphaned-by-a-dead-process.bin").apply { writeText("leftover") }
+    val source = File(dir, "source-owned-by-a-concurrent-probe").apply { writeText("leftover copy") }
+    encoder(FakeBackend()).encode(options(), FakeSource(), output, CancelToken()) {}
+    assertFalse("stale frame cache file is swept", stale.exists())
+    assertTrue("source copy from a concurrent probe/inspect is left alone", source.exists())
   }
 
   @Test fun trimEndBeyondTheSourceIsClamped() {

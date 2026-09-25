@@ -23,6 +23,12 @@ class WebpEncoderModule : Module() {
 
     Events(PROGRESS_EVENT)
 
+    // Sweeps leftover frame-cache and content:// source-copy files from a process that died mid-job, before
+    // any job of this new process can run.
+    OnCreate {
+      appContext.reactContext?.cacheDir?.let { FrameCache.sweepAll(it) }
+    }
+
     AsyncFunction("encodeAnimated") { raw: Map<String, Any?>, promise: Promise ->
       val options = try {
         AnimatedOptions.parse(raw)
