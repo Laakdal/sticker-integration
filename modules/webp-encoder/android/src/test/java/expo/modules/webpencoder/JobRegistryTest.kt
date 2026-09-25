@@ -39,4 +39,19 @@ class JobRegistryTest {
     assertTrue(registry.start("x99").isCancelled)
     assertFalse(registry.start("x0").isCancelled)
   }
+
+  @Test fun cancelAllCancelsEveryRunningJob() {
+    val a = registry.start("a")
+    val b = registry.start("b")
+    registry.cancelAll()
+    assertTrue(a.isCancelled)
+    assertTrue(b.isCancelled)
+  }
+
+  @Test fun aStartAfterCancelAllIsNotPoisonedOnceTheOldRunFinished() {
+    registry.start("a")
+    registry.cancelAll()
+    registry.finish("a") // the cancelled job notices and finishes, as a real encode would
+    assertFalse(registry.start("a").isCancelled)
+  }
 }

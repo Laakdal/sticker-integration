@@ -49,6 +49,16 @@ class JobRegistry(private val memory: Int = 64) {
     remember(finished, jobId)
   }
 
+  /**
+   * Cancels every currently running job's token (module teardown). Jobs stay in [running] until their own
+   * [finish] call, exactly as a per-job [cancel] leaves them, so a later [start] of the same id is never
+   * poisoned by this: it inherits cancellation only from [cancelledEarly], which this does not touch.
+   */
+  @Synchronized
+  fun cancelAll() {
+    running.values.forEach { it.cancel() }
+  }
+
   private fun remember(set: LinkedHashSet<String>, id: String) {
     set.remove(id)
     set.add(id)

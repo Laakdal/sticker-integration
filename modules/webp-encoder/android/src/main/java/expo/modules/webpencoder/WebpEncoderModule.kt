@@ -5,6 +5,7 @@ import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
 
 class WebpEncoderModule : Module() {
   private val jobs = JobRegistry()
@@ -73,6 +74,7 @@ class WebpEncoderModule : Module() {
     }
 
     OnDestroy {
+      jobs.cancelAll()
       encodeExecutor.shutdownNow()
       ioExecutor.shutdownNow()
     }
@@ -81,10 +83,17 @@ class WebpEncoderModule : Module() {
   // onDone must run before the promise settles, so a caller that reuses a jobId right after the promise
   // settles is never rejected with "already running" by a jobs.finish() that hasn't happened yet.
   private fun submit(executor: ExecutorService, promise: Promise, onDone: () -> Unit = {}, work: () -> Any?) {
-    executor.execute {
-      val outcome = runCatching(work)
+    try {
+      executor.execute {
+        val outcome = runCatching(work)
+        onDone()
+        outcome.fold({ promise.resolve(it) }, { reject(promise, it) })
+      }
+    } catch (e: RejectedExecutionException) {
+      // The module was torn down (OnDestroy already shut the executor down) between accepting the call and
+      // scheduling it. Settle the promise the same way a cancelled job would.
       onDone()
-      outcome.fold({ promise.resolve(it) }, { reject(promise, it) })
+      reject(promise, EncoderException(ErrorCode.CANCELLED, "The encoder was shut down."))
     }
   }
 
