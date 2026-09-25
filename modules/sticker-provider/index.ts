@@ -1,6 +1,8 @@
 import { requireNativeModule } from 'expo';
 
-export type AddResult = { status: 'added' | 'cancelled' | 'error'; message?: string };
+/** Why an add ended in `error`: WhatsApp missing, the launch failed, or WhatsApp rejected the pack. */
+export type AddErrorReason = 'not_installed' | 'launch_failed' | 'validation';
+export type AddResult = { status: 'added' | 'cancelled' | 'error'; message?: string; reason?: AddErrorReason };
 export type AppStatus = { installed: boolean; added: boolean };
 export type WhatsAppStatus = { consumer: AppStatus; business: AppStatus };
 

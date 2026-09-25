@@ -1,7 +1,6 @@
 package expo.modules.stickerprovider
 
 import android.app.Activity
-import android.content.ActivityNotFoundException
 import android.content.Intent
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.functions.Queues
@@ -33,7 +32,7 @@ class StickerProviderModule : Module() {
       }
       val status = WhatsAppStatus.forPack(context, authority, packId)
       if (!status.consumer.installed && !status.business.installed) {
-        promise.resolve(mapOf("status" to "error", "message" to "WhatsApp is not installed."))
+        promise.resolve(errorResult(REASON_NOT_INSTALLED, "WhatsApp is not installed."))
         return@AsyncFunction
       }
       val needConsumer = status.consumer.installed && !status.consumer.added
@@ -55,9 +54,11 @@ class StickerProviderModule : Module() {
       pendingAdd = promise
       try {
         activity.startActivityForResult(launch, ADD_PACK_REQUEST)
-      } catch (e: ActivityNotFoundException) {
+      } catch (e: Exception) {
+        // Any launch failure (not only ActivityNotFoundException, e.g. SecurityException) must release
+        // the pending slot, or every later add is rejected with BUSY until the app restarts.
         pendingAdd = null
-        promise.resolve(mapOf("status" to "error", "message" to "WhatsApp could not be opened."))
+        promise.resolve(errorResult(REASON_LAUNCH_FAILED, "WhatsApp could not be opened."))
       }
     }.runOnQueue(Queues.MAIN)
 
@@ -69,14 +70,20 @@ class StickerProviderModule : Module() {
       promise.resolve(
         when {
           payload.resultCode == Activity.RESULT_OK -> mapOf("status" to "added")
-          validationError != null -> mapOf("status" to "error", "message" to validationError)
+          validationError != null -> errorResult(REASON_VALIDATION, validationError)
           else -> mapOf("status" to "cancelled")
         },
       )
     }
   }
 
+  private fun errorResult(reason: String, message: String) =
+    mapOf("status" to "error", "reason" to reason, "message" to message)
+
   companion object {
+    private const val REASON_NOT_INSTALLED = "not_installed"
+    private const val REASON_LAUNCH_FAILED = "launch_failed"
+    private const val REASON_VALIDATION = "validation"
     private const val ADD_PACK_REQUEST = 200
     private const val ACTION_ENABLE_STICKER_PACK = "com.whatsapp.intent.action.ENABLE_STICKER_PACK"
     private const val EXTRA_PACK_ID = "sticker_pack_id"

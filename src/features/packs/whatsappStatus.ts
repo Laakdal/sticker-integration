@@ -12,6 +12,9 @@ export function describeAddResult(result: AddResult): string {
     case 'cancelled':
       return 'Sticker pack was not added.';
     case 'error':
+      if (result.reason === 'not_installed') return result.message ?? 'WhatsApp is not installed.';
+      if (result.reason === 'launch_failed') return result.message ?? 'WhatsApp could not be opened.';
+      // 'validation' (or an older native build without a reason): WhatsApp's own message, verbatim.
       return result.message ? `WhatsApp rejected the pack: ${result.message}` : 'WhatsApp rejected the pack.';
   }
 }

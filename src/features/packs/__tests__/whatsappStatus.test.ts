@@ -15,4 +15,19 @@ describe('whatsappStatus', () => {
     expect(describeAddResult({ status: 'error', message: 'Bad tray' })).toBe('WhatsApp rejected the pack: Bad tray');
     expect(describeAddResult({ status: 'error' })).toBe('WhatsApp rejected the pack.');
   });
+
+  it('shows native launch problems without blaming the pack', () => {
+    expect(describeAddResult({ status: 'error', reason: 'not_installed', message: 'WhatsApp is not installed.' })).toBe('WhatsApp is not installed.');
+    expect(describeAddResult({ status: 'error', reason: 'not_installed' })).toBe('WhatsApp is not installed.');
+    expect(describeAddResult({ status: 'error', reason: 'launch_failed', message: 'WhatsApp could not be opened.' })).toBe(
+      'WhatsApp could not be opened.',
+    );
+    expect(describeAddResult({ status: 'error', reason: 'launch_failed' })).toBe('WhatsApp could not be opened.');
+  });
+
+  it('shows WhatsApp validation errors verbatim after the rejected prefix', () => {
+    expect(describeAddResult({ status: 'error', reason: 'validation', message: 'Tray image too large' })).toBe(
+      'WhatsApp rejected the pack: Tray image too large',
+    );
+  });
 });
