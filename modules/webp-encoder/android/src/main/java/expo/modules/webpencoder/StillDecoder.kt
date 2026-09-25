@@ -25,9 +25,13 @@ object StillDecoder {
       }
     } catch (e: IOException) {
       throw EncoderException(ErrorCode.DECODE_FAILED, "${file.name} could not be decoded: ${e.message}", e)
+    } catch (e: RuntimeException) {
+      throw EncoderException(ErrorCode.DECODE_FAILED, "${file.name} could not be decoded: ${e.message}", e)
     }
     return try {
       bitmap.toPixels()
+    } catch (e: RuntimeException) {
+      throw EncoderException(ErrorCode.DECODE_FAILED, "${file.name} could not be decoded: ${e.message}", e)
     } finally {
       bitmap.recycle()
     }

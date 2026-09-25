@@ -9,6 +9,7 @@ class WebpFrameSource private constructor(
   override val height: Int,
   private val startsMs: IntArray,
   override val durationMs: Int,
+  private val fileName: String,
 ) : FrameSource {
   override val frameCount: Int get() = startsMs.size
   private val buffer = IntArray(width * height)
@@ -17,17 +18,23 @@ class WebpFrameSource private constructor(
 
   override fun frameAt(timeMs: Double): Pixels {
     val target = Timeline.frameIndexAt(startsMs, timeMs)
-    check(target >= currentIndex) { "WebP frames must be requested in time order" }
-    if (target != currentIndex) {
-      while (currentIndex < target) {
-        if (WebpNative.animDecoderNext(handle, buffer) < 0) {
-          throw EncoderException(ErrorCode.DECODE_FAILED, "WebP frame ${currentIndex + 1} could not be decoded.")
+    try {
+      check(target >= currentIndex) { "WebP frames must be requested in time order" }
+      if (target != currentIndex) {
+        while (currentIndex < target) {
+          if (WebpNative.animDecoderNext(handle, buffer) < 0) {
+            throw EncoderException(ErrorCode.DECODE_FAILED, "WebP frame ${currentIndex + 1} could not be decoded.")
+          }
+          currentIndex++
         }
-        currentIndex++
+        current = Pixels(buffer.copyOf(), width, height)
       }
-      current = Pixels(buffer.copyOf(), width, height)
+      return current!!
+    } catch (e: EncoderException) {
+      throw e
+    } catch (e: RuntimeException) {
+      throw EncoderException(ErrorCode.DECODE_FAILED, "$fileName could not be decoded: ${e.message}", e)
     }
-    return current!!
   }
 
   override fun close() = WebpNative.animDecoderDelete(handle)
@@ -49,7 +56,7 @@ class WebpFrameSource private constructor(
         starts[i] = t
         t += Timeline.normalizeDelayMs(d)
       }
-      return WebpFrameSource(handle, facts.width, facts.height, starts, t)
+      return WebpFrameSource(handle, facts.width, facts.height, starts, t, file.name)
     }
   }
 }

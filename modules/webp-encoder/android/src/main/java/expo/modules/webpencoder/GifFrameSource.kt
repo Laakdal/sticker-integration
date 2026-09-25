@@ -13,6 +13,7 @@ class GifFrameSource private constructor(
   private val decoder: StandardGifDecoder,
   private val startsMs: IntArray,
   override val durationMs: Int,
+  private val fileName: String,
 ) : FrameSource {
   override val width: Int get() = decoder.width
   override val height: Int get() = decoder.height
@@ -24,16 +25,22 @@ class GifFrameSource private constructor(
 
   override fun frameAt(timeMs: Double): Pixels {
     val target = Timeline.frameIndexAt(startsMs, timeMs)
-    check(target >= currentIndex) { "GIF frames must be requested in time order" }
-    while (currentIndex < target) {
-      decoder.advance()
-      val bitmap = decoder.nextFrame
-        ?: throw EncoderException(ErrorCode.DECODE_FAILED, "GIF frame ${currentIndex + 1} could not be decoded.")
-      currentIndex = decoder.currentFrameIndex
-      if (currentIndex == target) current = bitmap.toPixels()
-      bitmap.recycle()
+    try {
+      check(target >= currentIndex) { "GIF frames must be requested in time order" }
+      while (currentIndex < target) {
+        decoder.advance()
+        val bitmap = decoder.nextFrame
+          ?: throw EncoderException(ErrorCode.DECODE_FAILED, "GIF frame ${currentIndex + 1} could not be decoded.")
+        currentIndex = decoder.currentFrameIndex
+        if (currentIndex == target) current = bitmap.toPixels()
+        bitmap.recycle()
+      }
+      return current ?: throw EncoderException(ErrorCode.DECODE_FAILED, "GIF has no decodable frames.")
+    } catch (e: EncoderException) {
+      throw e
+    } catch (e: RuntimeException) {
+      throw EncoderException(ErrorCode.DECODE_FAILED, "$fileName could not be decoded: ${e.message}", e)
     }
-    return current ?: throw EncoderException(ErrorCode.DECODE_FAILED, "GIF has no decodable frames.")
   }
 
   override fun close() = decoder.clear()
@@ -55,7 +62,7 @@ class GifFrameSource private constructor(
         starts[i] = t
         t += decoder.getDelay(i)
       }
-      return GifFrameSource(decoder, starts, t)
+      return GifFrameSource(decoder, starts, t, file.name)
     }
   }
 }
