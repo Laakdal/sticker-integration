@@ -1,6 +1,7 @@
 import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { BUNDLED_PACKS_VERSION, bundledPacks } from '../../assets/bundled-packs';
 import type { InspectResult, Pack } from '@/domain/types';
 import { parsePack } from '@/services/packSchema';
 import { validatePack, validateStickerFile } from '@/services/validation';
@@ -76,6 +77,10 @@ describe.each(PACK_DIRS)('bundled pack %s', (dir) => {
       expect(facts.animated).toBe(sticker.animated);
     }
   });
+
+  it('derives imageDataVersion from BUNDLED_PACKS_VERSION so installed apps re-copy it after a bump', () => {
+    expect(pack.imageDataVersion).toBe(BUNDLED_PACKS_VERSION);
+  });
 });
 
 describe('bundled manifest', () => {
@@ -85,10 +90,11 @@ describe('bundled manifest', () => {
     expect(moves.stickers.length).toBeGreaterThanOrEqual(3);
   });
 
-  it('lists both packs and bumps the version so installed apps re-copy them', () => {
-    const manifest = readFileSync(join(root, 'index.ts'), 'utf8');
-    expect(manifest).toContain("require('./starter-basics/pack.json')");
-    expect(manifest).toContain("require('./starter-moves/pack.json')");
-    expect(manifest).toContain('BUNDLED_PACKS_VERSION = 2');
+  it('lists both packs, each pinned to BUNDLED_PACKS_VERSION', () => {
+    const ids = bundledPacks.map((source) => parsePack(source.pack)?.id);
+    expect(ids).toEqual(expect.arrayContaining(['bundled.starter-basics', 'bundled.starter-moves']));
+    for (const source of bundledPacks) {
+      expect(parsePack(source.pack)?.imageDataVersion).toBe(BUNDLED_PACKS_VERSION);
+    }
   });
 });
