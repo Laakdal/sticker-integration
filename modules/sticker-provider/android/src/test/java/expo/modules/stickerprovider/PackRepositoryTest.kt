@@ -73,4 +73,66 @@ class PackRepositoryTest {
     assertNull(r.load(".."))
     assertNull(r.load("missing"))
   }
+
+  private fun writePackJson(id: String, edit: (JSONObject) -> Unit) {
+    val dir = File(tmp.root, "packs/$id").apply { mkdirs() }
+    val o = JSONObject(TestPacks.json(id, 3))
+    edit(o)
+    File(dir, "pack.json").writeText(o.toString())
+    File(dir, "tray.png").writeText("png")
+    for (i in 0 until 3) File(dir, "s$i.webp").writeText("webp$i")
+  }
+
+  @Test fun rejectsPackWhoseStickerFileEscapesThePackFolder() {
+    // `packs/evil/../secret.txt` resolves to an existing file, so only the name guard stops it.
+    File(tmp.root, "packs/secret.txt").apply { parentFile!!.mkdirs() }.writeText("secret")
+    writePackJson("evil") { o -> o.getJSONArray("stickers").getJSONObject(0).put("file", "../secret.txt") }
+    val r = repo()
+    assertNull(r.load("evil"))
+    assertNull(r.file("evil", "../secret.txt"))
+    assertNull(r.file("evil", "s1.webp"))
+    assertEquals(emptyList<String>(), r.all().map { it.id })
+  }
+
+  @Test fun rejectsPackWhoseTrayIconEscapesThePackFolder() {
+    File(tmp.root, "packs/x").apply { parentFile!!.mkdirs() }.writeText("tray")
+    writePackJson("evil") { o -> o.put("trayIcon", "../x") }
+    val r = repo()
+    assertNull(r.load("evil"))
+    assertNull(r.file("evil", "../x"))
+    assertNull(r.file("evil", "s0.webp"))
+  }
+
+  @Test fun fallsBackToCompleteTmpFileWhilePackJsonIsBeingReplaced() {
+    writePack("good")
+    val dir = File(tmp.root, "packs/good")
+    File(dir, "pack.json").renameTo(File(dir, "pack.json.tmp"))
+    val pack = repo().load("good")
+    assertNotNull(pack)
+    assertEquals("good", pack!!.id)
+    assertEquals("webp1", repo().file("good", "s1.webp")!!.readText())
+  }
+
+  @Test fun prefersPackJsonOverTmp() {
+    writePack("good")
+    val dir = File(tmp.root, "packs/good")
+    File(dir, "pack.json.tmp").writeText("{truncated")
+    assertNotNull(repo().load("good"))
+  }
+
+  @Test fun ignoresUnreadableTmpFile() {
+    File(tmp.root, "packs/good").mkdirs()
+    File(tmp.root, "packs/good/pack.json.tmp").writeText("{truncated")
+    assertNull(repo().load("good"))
+  }
+
+  @Test fun containmentCheckRejectsPathsOutsideThePackFolder() {
+    val dir = File(tmp.root, "packs/good").apply { mkdirs() }
+    File(tmp.root, "packs/secret.txt").writeText("secret")
+    assertEquals(false, PackRepository.isContained(dir, File(dir, "../secret.txt")))
+    assertEquals(false, PackRepository.isContained(dir, File(dir, "..")))
+    assertEquals(false, PackRepository.isContained(dir, File(dir, ".")))
+    assertEquals(false, PackRepository.isContained(dir, File(tmp.root, "packs/good-sibling/s1.webp")))
+    assertEquals(true, PackRepository.isContained(dir, File(dir, "s1.webp")))
+  }
 }
