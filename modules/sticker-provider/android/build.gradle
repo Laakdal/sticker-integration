@@ -1,0 +1,24 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.stickerprovider'
+version = '1.0.0'
+
+android {
+  namespace "expo.modules.stickerprovider"
+  defaultConfig {
+    versionCode 1
+    versionName "1.0.0"
+  }
+  testOptions {
+    unitTests.returnDefaultValues = true
+  }
+}
+
+dependencies {
+  testImplementation 'junit:junit:4.13.2'
+  // Android's org.json is a stub on the JVM; use the real implementation in unit tests.
+  testImplementation 'org.json:json:20240303'
+}
