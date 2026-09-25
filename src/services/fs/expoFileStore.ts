@@ -23,7 +23,7 @@ export const expoFileStore: FileStore = {
     return new File(uri).text();
   },
   async writeText(uri, content) {
-    await new File(uri).write(content);
+    new File(uri).write(content);
   },
   async exists(uri) {
     return fileExists(uri) || dirExists(uri);
@@ -44,15 +44,15 @@ export const expoFileStore: FileStore = {
   async move(fromUri, toUri) {
     const target = new File(toUri);
     if (target.exists) target.delete();
-    new File(fromUri).move(target);
+    await new File(fromUri).move(target);
   },
   async moveDir(fromUri, toUri) {
-    new Directory(fromUri).move(new Directory(toUri));
+    await new Directory(fromUri).move(new Directory(toUri));
   },
   async copy(fromUri, toUri) {
     const target = new File(toUri);
     if (target.exists) target.delete();
-    new File(fromUri).copy(target);
+    await new File(fromUri).copy(target);
   },
   async remove(uri) {
     if (fileExists(uri)) {
