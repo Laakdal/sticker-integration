@@ -307,7 +307,7 @@ Output is always a 512×512 canvas, and the source aspect ratio is **always pres
 1. Source opens directly on a Skia 512×512 canvas over a checkerboard, framed with **Fit** by default. Large sources are decoded downsampled to ≤2048 px on the long edge to bound memory.
 2. Framing: Fit/Fill toggle, base image pinch/pan (resize), rotate (90° steps + free). **Optional Crop tool** (`openCropper`, free-form or preset ratios) cuts out part of the source photo; the cropped result returns to the canvas with Fit/Fill framing as usual.
 3. Layers: text (font, colour, outline stroke) and emoji (`rn-emoji-keyboard`); select, drag, scale, rotate; undo/redo.
-4. Save: Skia snapshot → PNG → `encodeStatic` → preview of the encoded result with its size → tag 1–3 emojis (+ optional accessibility text) → commit.
+4. Save: Skia snapshot → PNG → `encodeStatic` → preview of the encoded result with its size → optional emoji tagging (+ optional accessibility text) → commit. New stickers get the default emoji 😀 automatically, so tagging is never required (WhatsApp needs at least one emoji per sticker).
 5. Source image + `layers.json` saved to `.src/<stickerId>/` for re-editing.
 
 ### Animated editor (`app/editor/animated`)
@@ -318,7 +318,7 @@ Output is always a 512×512 canvas, and the source aspect ratio is **always pres
 - **Output:** FPS (Auto shows the resolved value, or manual 5–30); priority Smooth / Sharp with one-line explanations.
 - **Effective duration label** (e.g. "7.2 s of 10 s") updates live and turns red with an "Encode" block when over 10 s.
 - Speed and reverse/boomerang are visible only in the encoded result preview (the source preview plays at 1× forward).
-- Encode with staged progress (decoding → encoding pass n) + cancel; result preview with size/quality/fps; "Adjust" returns to the settings with them intact; emoji tagging; commit.
+- Encode with staged progress (decoding → encoding pass n) + cancel; result preview with size/quality/fps; "Adjust" returns to the settings with them intact; optional emoji tagging (default 😀 applied automatically); commit.
 
 ### Import/Export (`app/import-export`)
 See §9.
