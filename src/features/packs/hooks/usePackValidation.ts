@@ -6,6 +6,7 @@ import { packStorage } from '@/store/packsStore';
 
 interface TrayResult {
   key: string;
+  packId: string;
   facts: TrayFacts | null;
 }
 
@@ -21,18 +22,19 @@ export function usePackValidation(pack: Pack | undefined) {
     const resolvedKey = trayKey(pack);
     packStorage.fileSize(pack.id, pack.trayIcon).then((size) => {
       if (!active) return;
-      setTray({ key: resolvedKey, facts: size === null ? null : { sizeBytes: size } });
+      setTray({ key: resolvedKey, packId: pack.id, facts: size === null ? null : { sizeBytes: size } });
     });
     return () => {
       active = false;
     };
   }, [pack?.id, pack?.trayIcon, pack?.imageDataVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // `loading` and the applicable tray facts are derived from whether the last resolved
+  // `loading` and the tray facts are derived from the last resolved fetch
   // fetch matches the current pack, rather than tracked with their own setState calls in
   // the effect body (which would trip react-hooks/set-state-in-effect for no benefit).
   const loading = key !== null && tray?.key !== key;
-  const trayFacts = tray?.key === key ? tray.facts : null;
+  // While a changed tray reloads, keep the same pack's last facts so validation doesn't flicker to TRAY_MISSING.
+  const trayFacts = pack && tray?.packId === pack.id ? tray.facts : null;
   const validate = useCallback((p: Pack) => validatePack(p, trayFacts), [trayFacts]);
   const issues = useMemo(() => (pack ? validate(pack) : []), [pack, validate]);
   return { issues, loading, validate };
