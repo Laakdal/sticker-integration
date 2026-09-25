@@ -48,4 +48,7 @@ object ProviderContract {
 
   fun isKnownFile(p: ProviderPack, name: String): Boolean =
     name == p.trayIcon || p.stickers.any { it.file == name }
+
+  /** Only the plain read-only mode is allowed; write-capable modes must not bypass the read permission. */
+  fun isReadOnlyMode(mode: String): Boolean = mode == "r"
 }

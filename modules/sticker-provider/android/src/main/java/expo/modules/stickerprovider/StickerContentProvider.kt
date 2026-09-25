@@ -49,6 +49,7 @@ class StickerContentProvider : ContentProvider() {
     MatrixCursor(ProviderContract.PACK_COLUMNS).also { c -> packs.forEach { c.addRow(ProviderContract.packRow(it)) } }
 
   override fun openAssetFile(uri: Uri, mode: String): AssetFileDescriptor {
+    if (!ProviderContract.isReadOnlyMode(mode)) throw FileNotFoundException(uri.toString())
     val segments = uri.pathSegments
     if (matcher.match(uri) != CODE_ASSET || segments.size != 3) throw FileNotFoundException(uri.toString())
     val file = repo.file(segments[1], segments[2]) ?: throw FileNotFoundException(uri.toString())

@@ -36,4 +36,13 @@ class ProviderContractTest {
     assertTrue(ProviderContract.isKnownFile(pack, "s2.webp"))
     assertFalse(ProviderContract.isKnownFile(pack, "pack.json"))
   }
+
+  @Test fun onlyPlainReadModeIsReadOnly() {
+    assertTrue(ProviderContract.isReadOnlyMode("r"))
+    assertFalse(ProviderContract.isReadOnlyMode("w"))
+    assertFalse(ProviderContract.isReadOnlyMode("rw"))
+    assertFalse(ProviderContract.isReadOnlyMode("rwt"))
+    assertFalse(ProviderContract.isReadOnlyMode("wa"))
+    assertFalse(ProviderContract.isReadOnlyMode(""))
+  }
 }
