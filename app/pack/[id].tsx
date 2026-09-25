@@ -1,5 +1,5 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Appbar, Snackbar, Text, useTheme } from 'react-native-paper';
 
@@ -9,6 +9,7 @@ import {
   DuplicatePackBanner,
   isAddedAnywhere,
   PackDetailsForm,
+  type PackDetailsFormHandle,
   StickerDetailsSheet,
   StickerGrid,
   useAddToWhatsApp,
@@ -24,8 +25,13 @@ export default function PackScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const pack = usePack(id);
-  const { issues } = usePackValidation(pack);
-  const whatsapp = useAddToWhatsApp(pack, issues);
+  const { issues, validate } = usePackValidation(pack);
+  const detailsRef = useRef<PackDetailsFormHandle>(null);
+  const whatsapp = useAddToWhatsApp(pack, issues, {
+    flush: () => detailsRef.current?.flush() ?? Promise.resolve(),
+    readLatest: () => usePacksStore.getState().packs[id],
+    validate,
+  });
   const { status } = useWhatsAppStatus(id, pack?.imageDataVersion ?? 0);
   const actions = usePacksStore.getState();
   const [openStickerId, setOpenStickerId] = useState<string | null>(null);
@@ -67,7 +73,7 @@ export default function PackScreen() {
               {isAddedAnywhere(status) ? 'Added to WhatsApp' : 'Tray icon shown in the WhatsApp sticker tray'}
             </Text>
           </View>
-          <PackDetailsForm pack={pack} readOnly={readOnly} onSave={(patch) => run(actions.updateDetails(pack.id, patch))} />
+          <PackDetailsForm ref={detailsRef} pack={pack} readOnly={readOnly} onSave={(patch) => run(actions.updateDetails(pack.id, patch))} />
           <StickerGrid
             pack={pack}
             readOnly={readOnly}

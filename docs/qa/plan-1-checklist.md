@@ -18,3 +18,5 @@
 | 14 | Double-tap Add to WhatsApp quickly | Only one WhatsApp dialog opens | Not run — pending device |
 | 15 | Dark mode | All screens readable | Not run — pending device |
 | 16 | Fresh install of release variant (`npx expo run:android --variant release`) | Shows Starter Basics | Not run — pending device |
+| 17 | Rename then immediately tap Add to WhatsApp | WhatsApp dialog shows the new name | Not run — pending device |
+| 18 | Rename then press back | New name persists | Not run — pending device |

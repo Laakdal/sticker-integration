@@ -1,7 +1,7 @@
 export { AddToWhatsAppButton } from './components/AddToWhatsAppButton';
 export { DuplicatePackBanner } from './components/DuplicatePackBanner';
 export { InstallErrorBanner } from './components/InstallErrorBanner';
-export { PackDetailsForm } from './components/PackDetailsForm';
+export { PackDetailsForm, type PackDetailsFormHandle } from './components/PackDetailsForm';
 export { PackList } from './components/PackList';
 export { StickerDetailsSheet } from './components/StickerDetailsSheet';
 export { StickerGrid } from './components/StickerGrid';

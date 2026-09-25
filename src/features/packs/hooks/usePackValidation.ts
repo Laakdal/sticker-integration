@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { Pack, TrayFacts } from '@/domain/types';
 import { validatePack } from '@/services/validation';
@@ -33,6 +33,7 @@ export function usePackValidation(pack: Pack | undefined) {
   // the effect body (which would trip react-hooks/set-state-in-effect for no benefit).
   const loading = key !== null && tray?.key !== key;
   const trayFacts = tray?.key === key ? tray.facts : null;
-  const issues = useMemo(() => (pack ? validatePack(pack, trayFacts) : []), [pack, trayFacts]);
-  return { issues, loading };
+  const validate = useCallback((p: Pack) => validatePack(p, trayFacts), [trayFacts]);
+  const issues = useMemo(() => (pack ? validate(pack) : []), [pack, validate]);
+  return { issues, loading, validate };
 }
