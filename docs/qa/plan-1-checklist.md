@@ -17,3 +17,4 @@
 | 13 | Add the (valid) copy pack, then reorder in app and re-open WhatsApp sticker tray | New order appears in WhatsApp (imageDataVersion bump) | Not run — pending device |
 | 14 | Double-tap Add to WhatsApp quickly | Only one WhatsApp dialog opens | Not run — pending device |
 | 15 | Dark mode | All screens readable | Not run — pending device |
+| 16 | Fresh install of release variant (`npx expo run:android --variant release`) | Shows Starter Basics | Not run — pending device |

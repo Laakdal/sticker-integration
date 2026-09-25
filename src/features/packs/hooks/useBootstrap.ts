@@ -2,17 +2,15 @@ import { Asset } from 'expo-asset';
 import { useEffect, useState } from 'react';
 
 import { bundledPacks, BUNDLED_PACKS_VERSION } from '../../../../assets/bundled-packs';
+import { resolveLocalAssetUri } from '@/services/assetUri';
 import { installBundledPacks } from '@/services/bundledPacks';
 import { runBootstrap } from '@/services/bootstrap';
 import { expoFileStore } from '@/services/fs/expoFileStore';
 import { packStorage, usePacksStore } from '@/store/packsStore';
 import { useSettingsStore } from '@/store/settingsStore';
 
-async function resolveAssetUri(moduleId: number): Promise<string> {
-  const asset = Asset.fromModule(moduleId);
-  await asset.downloadAsync();
-  if (!asset.localUri) throw new Error(`Asset ${moduleId} has no local URI`);
-  return asset.localUri;
+function resolveAssetUri(moduleId: number): Promise<string> {
+  return resolveLocalAssetUri(Asset.fromModule(moduleId));
 }
 
 export function useBootstrap() {
