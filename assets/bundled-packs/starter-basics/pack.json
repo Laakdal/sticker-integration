@@ -1,0 +1,82 @@
+{
+  "id": "bundled.starter-basics",
+  "name": "Starter Basics",
+  "publisher": "Sticker Maker",
+  "trayIcon": "tray.png",
+  "animated": false,
+  "stickers": [
+    {
+      "id": "s1",
+      "file": "s1.webp",
+      "emojis": [
+        "👋",
+        "😀"
+      ],
+      "accessibilityText": "Yellow face waving hi",
+      "animated": false,
+      "sizeBytes": 10722,
+      "editable": false
+    },
+    {
+      "id": "s2",
+      "file": "s2.webp",
+      "emojis": [
+        "😂"
+      ],
+      "accessibilityText": "Green face laughing out loud",
+      "animated": false,
+      "sizeBytes": 10680,
+      "editable": false
+    },
+    {
+      "id": "s3",
+      "file": "s3.webp",
+      "emojis": [
+        "👌"
+      ],
+      "accessibilityText": "Blue face saying OK",
+      "animated": false,
+      "sizeBytes": 13164,
+      "editable": false
+    },
+    {
+      "id": "s4",
+      "file": "s4.webp",
+      "emojis": [
+        "🙅"
+      ],
+      "accessibilityText": "Red face saying no",
+      "animated": false,
+      "sizeBytes": 12224,
+      "editable": false
+    },
+    {
+      "id": "s5",
+      "file": "s5.webp",
+      "emojis": [
+        "😮"
+      ],
+      "accessibilityText": "Purple face surprised saying wow",
+      "animated": false,
+      "sizeBytes": 14958,
+      "editable": false
+    },
+    {
+      "id": "s6",
+      "file": "s6.webp",
+      "emojis": [
+        "👋",
+        "😊"
+      ],
+      "accessibilityText": "Teal face saying bye",
+      "animated": false,
+      "sizeBytes": 11660,
+      "editable": false
+    }
+  ],
+  "imageDataVersion": 1,
+  "avoidCache": false,
+  "origin": "bundled",
+  "createdAt": "2026-09-25T00:00:00.000Z",
+  "updatedAt": "2026-09-25T00:00:00.000Z"
+}
