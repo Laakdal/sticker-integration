@@ -51,7 +51,7 @@ Quality rationale: both routes end in libwebp, so quality is decided by (a) sour
 | Images (display) | `expo-image` (disk/memory cache, animated WebP playback) |
 | Lists/grids | `@shopify/flash-list`; drag-reorder grid via `react-native-sortables` |
 | Editor canvas | `@shopify/react-native-skia` + `react-native-gesture-handler` + `react-native-reanimated` |
-| Crop | `react-native-image-crop-picker` (`openCropper`, 1:1) |
+| Crop (optional tool) | `react-native-image-crop-picker` (`openCropper`, free-form or preset ratios) |
 | Emoji picker | `rn-emoji-keyboard` |
 | Pickers | `expo-media-library` (in-app gallery), `expo-image-picker` (system Photo Picker fallback), `expo-document-picker` |
 | Zip | `react-native-zip-archive` (native) |
@@ -77,12 +77,12 @@ src/features/
                  AddToWhatsAppButton, WhatsAppBadge, DuplicatePackBanner
     hooks/       usePack, usePackValidation, useWhatsAppStatus, useAddToWhatsApp
   editor/
-    shared/      EmojiTagger, EncodedResultPreview, EncodeProgressDialog
-    static/      EditorCanvas, Checkerboard, ImageLayer, TextLayer, EmojiLayer,
+    shared/      EmojiTagger, EncodedResultPreview, EncodeProgressDialog, FitFillToggle
+    static/      EditorCanvas, Checkerboard, ImageLayer, TextLayer, EmojiLayer, CropToolButton,
                  TransformHandles, EditorToolbar, TextStyleSheet, EmojiPickerSheet,
                  UndoRedoControls
                  hooks: useLayerHistory, useCanvasGestures, useExportStatic
-    animated/    AnimatedSourcePreview, FramingOverlay, FitFillToggle, TrimControls
+    animated/    AnimatedSourcePreview, FramingOverlay, TrimControls
                  (TrimSlider + TimeInputs), SpeedSelector, PlaybackModeSelector,
                  RotateFlipControls, FpsControl, QualityPrioritySelector,
                  EffectiveDurationLabel
@@ -294,17 +294,24 @@ Sections "My packs" and "Starter packs". Card: tray icon, name, author, sticker 
 - **Device:** `expo-media-library` grid; filter chips *All / Images / GIFs / Videos*; multi-select. Permissions: `READ_MEDIA_IMAGES` + `READ_MEDIA_VIDEO` (Android 13+), `READ_EXTERNAL_STORAGE` (Android 9–12); handles Android 14 partial access (`READ_MEDIA_VISUAL_USER_SELECTED`) with a "Select more photos" action. If denied, shows a rationale and falls back to system Photo Picker / document picker.
 - **GIF Search:** debounced search; trending when empty; infinite scroll; low-res preview renditions; tap → full preview → "Add to pack" downloads best MP4/WebP rendition → animated editor. Provider attribution shown; provider switch available.
 
-Multi-select routing: multiple stills → batch queue (default 1:1 crop each, open any in the full editor, "Accept all"); multiple GIFs/videos → sequential animated editor sessions.
+Multi-select routing: multiple stills → batch queue (each framed with **Fit** by default, open any in the full editor, "Accept all"); multiple GIFs/videos → sequential animated editor sessions.
+
+### Framing rule (static and animated)
+Output is always a 512×512 canvas, and the source aspect ratio is **always preserved — never stretched**.
+- **Fit (default):** the whole source is scaled to fit inside 512×512 and centred; leftover space is transparent (e.g. 270×200 → 512×379 with 66 px transparent bands above and below). Nothing is cut off.
+- **Fill:** the source is scaled to cover 512×512; overflowing edges are cropped, and the user pans/zooms to choose the visible area.
+- Users can also pinch/pan freely anywhere between the two; the toggle snaps back to exact Fit or Fill.
+- Sources smaller than 512 px are upscaled (unavoidable given WhatsApp's fixed size); GIF Search downloads the highest-resolution rendition to minimise this.
 
 ### Static editor (`app/editor/static`)
-1. Source → `openCropper` 1:1.
-2. Skia 512×512 canvas over checkerboard: base image pinch/pan (resize), rotate (90° steps + free).
+1. Source opens directly on a Skia 512×512 canvas over a checkerboard, framed with **Fit** by default. Large sources are decoded downsampled to ≤2048 px on the long edge to bound memory.
+2. Framing: Fit/Fill toggle, base image pinch/pan (resize), rotate (90° steps + free). **Optional Crop tool** (`openCropper`, free-form or preset ratios) cuts out part of the source photo; the cropped result returns to the canvas with Fit/Fill framing as usual.
 3. Layers: text (font, colour, outline stroke) and emoji (`rn-emoji-keyboard`); select, drag, scale, rotate; undo/redo.
 4. Save: Skia snapshot → PNG → `encodeStatic` → preview of the encoded result with its size → tag 1–3 emojis (+ optional accessibility text) → commit.
 5. Source image + `layers.json` saved to `.src/<stickerId>/` for re-editing.
 
 ### Animated editor (`app/editor/animated`)
-- Playing source preview with square framing overlay (pinch/pan) and fill/fit toggle.
+- Playing source preview with square framing overlay (pinch/pan) and Fit/Fill toggle (**Fit** by default).
 - **Trim:** range slider plus start/end time inputs (0.01 s precision) with "Use current position" buttons.
 - **Timing:** speed selector (0.5×–2×); playback mode (normal / reverse / boomerang).
 - **Transform:** rotate 90° steps; flip horizontal / vertical. The preview reflects rotate/flip immediately.
