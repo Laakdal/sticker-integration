@@ -20,3 +20,4 @@
 | 16 | Fresh install of release variant (`npx expo run:android --variant release`) | Shows Starter Basics | Not run — pending device |
 | 17 | Rename then immediately tap Add to WhatsApp | WhatsApp dialog shows the new name | Not run — pending device |
 | 18 | Rename then press back | New name persists | Not run — pending device |
+| 19 | 3-button navigation | Add to WhatsApp and New pack fully visible above nav bar | Not run — pending device |

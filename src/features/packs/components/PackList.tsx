@@ -1,5 +1,6 @@
 import { FlashList } from '@shopify/flash-list';
 import { Banner } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState, SectionHeader } from '@/components';
 import type { Pack } from '@/domain/types';
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export function PackList({ myPacks, bundledPacks, quarantined, onOpenPack }: Props) {
+  const insets = useSafeAreaInsets();
   const rows: Row[] = [
     { type: 'header', key: 'h-mine', title: 'My packs' },
     ...(myPacks.length
@@ -37,7 +39,7 @@ export function PackList({ myPacks, bundledPacks, quarantined, onOpenPack }: Pro
       data={rows}
       keyExtractor={(row) => row.key}
       getItemType={(row) => row.type}
-      contentContainerStyle={{ paddingBottom: 96 }}
+      contentContainerStyle={{ paddingBottom: 96 + insets.bottom }}
       ListHeaderComponent={
         <Banner visible={quarantined.length > 0} icon="alert">
           {`${quarantined.length} ${quarantined.length === 1 ? 'pack' : 'packs'} could not be read and were moved to quarantine.`}

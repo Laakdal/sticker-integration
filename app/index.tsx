@@ -2,6 +2,7 @@ import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { FAB } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useShallow } from 'zustand/react/shallow';
 
 import { Screen } from '@/components';
@@ -11,6 +12,7 @@ import { usePacksStore } from '@/store/packsStore';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const myPacks = usePacksStore(useShallow(selectMyPacks));
   const bundledPacks = usePacksStore(useShallow(selectBundledPacks));
   const quarantined = usePacksStore((s) => s.quarantined);
@@ -36,9 +38,9 @@ export default function HomeScreen() {
         quarantined={quarantined}
         onOpenPack={(id) => router.push({ pathname: '/pack/[id]', params: { id } })}
       />
-      <FAB icon="plus" label="New pack" style={styles.fab} onPress={onCreate} loading={creating} disabled={creating} />
+      <FAB icon="plus" label="New pack" style={[styles.fab, { bottom: 24 + insets.bottom }]} onPress={onCreate} loading={creating} disabled={creating} />
     </Screen>
   );
 }
 
-const styles = StyleSheet.create({ fab: { position: 'absolute', right: 16, bottom: 24 } });
+const styles = StyleSheet.create({ fab: { position: 'absolute', right: 16 } });

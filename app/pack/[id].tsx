@@ -2,6 +2,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Appbar, Snackbar, Text, useTheme } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ConfirmDialog, EmptyState, Screen, StickerImage } from '@/components';
 import {
@@ -24,6 +25,7 @@ export default function PackScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const pack = usePack(id);
   const { issues, validate } = usePackValidation(pack);
   const detailsRef = useRef<PackDetailsFormHandle>(null);
@@ -82,7 +84,7 @@ export default function PackScreen() {
           />
         </View>
       </Screen>
-      <View style={[styles.footer, { backgroundColor: colors.elevation.level2 }]}>
+      <View style={[styles.footer, { backgroundColor: colors.elevation.level2, paddingBottom: 16 + insets.bottom }]}>
         <ValidationBar count={pack.stickers.length} issues={issues} />
         <AddToWhatsAppButton disabled={issues.length > 0} pending={whatsapp.pending} onPress={whatsapp.add} />
       </View>
