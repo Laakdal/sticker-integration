@@ -1,0 +1,58 @@
+{
+  "id": "bundled.starter-moves",
+  "name": "Starter Moves",
+  "publisher": "Sticker Maker",
+  "trayIcon": "tray.png",
+  "animated": true,
+  "stickers": [
+    {
+      "id": "m1",
+      "file": "m1.webp",
+      "emojis": [
+        "🎉"
+      ],
+      "accessibilityText": "Yellow face bouncing and cheering yay",
+      "animated": true,
+      "sizeBytes": 88104,
+      "editable": false
+    },
+    {
+      "id": "m2",
+      "file": "m2.webp",
+      "emojis": [
+        "😂"
+      ],
+      "accessibilityText": "Green face shaking with laughter",
+      "animated": true,
+      "sizeBytes": 54380,
+      "editable": false
+    },
+    {
+      "id": "m3",
+      "file": "m3.webp",
+      "emojis": [
+        "👋"
+      ],
+      "accessibilityText": "Blue face tilting side to side saying hi",
+      "animated": true,
+      "sizeBytes": 86680,
+      "editable": false
+    },
+    {
+      "id": "m4",
+      "file": "m4.webp",
+      "emojis": [
+        "😮"
+      ],
+      "accessibilityText": "Purple face growing and shrinking saying wow",
+      "animated": true,
+      "sizeBytes": 91082,
+      "editable": false
+    }
+  ],
+  "imageDataVersion": 2,
+  "avoidCache": false,
+  "origin": "bundled",
+  "createdAt": "2026-09-25T00:00:00.000Z",
+  "updatedAt": "2026-09-25T00:00:00.000Z"
+}

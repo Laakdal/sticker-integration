@@ -2,7 +2,7 @@
 import type { BundledPackSource } from '@/services/bundledPacks';
 
 /** Bump when bundled pack contents change so existing installs re-copy them. */
-export const BUNDLED_PACKS_VERSION = 1;
+export const BUNDLED_PACKS_VERSION = 2;
 
 export const bundledPacks: BundledPackSource[] = [
   {
@@ -15,6 +15,16 @@ export const bundledPacks: BundledPackSource[] = [
       's4.webp': require('./starter-basics/s4.webp'),
       's5.webp': require('./starter-basics/s5.webp'),
       's6.webp': require('./starter-basics/s6.webp'),
+    },
+  },
+  {
+    pack: require('./starter-moves/pack.json'),
+    files: {
+      'tray.png': require('./starter-moves/tray.png'),
+      'm1.webp': require('./starter-moves/m1.webp'),
+      'm2.webp': require('./starter-moves/m2.webp'),
+      'm3.webp': require('./starter-moves/m3.webp'),
+      'm4.webp': require('./starter-moves/m4.webp'),
     },
   },
 ];

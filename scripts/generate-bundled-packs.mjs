@@ -4,6 +4,9 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
+import { generateStarterMoves } from './bundled/starter-moves.mjs';
+import { BUNDLED_PACKS_VERSION } from './bundled/version.mjs';
+
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'bundled-packs');
 const PACK_ID = 'bundled.starter-basics';
 const outDir = join(root, 'starter-basics');
@@ -64,13 +67,21 @@ writeFileSync(join(outDir, 'tray.png'), tray);
 const timestamp = '2026-09-25T00:00:00.000Z';
 const pack = {
   id: PACK_ID, name: 'Starter Basics', publisher: 'Sticker Maker', trayIcon: 'tray.png', animated: false,
-  stickers: packStickers, imageDataVersion: 1, avoidCache: false, origin: 'bundled',
+  stickers: packStickers, imageDataVersion: BUNDLED_PACKS_VERSION, avoidCache: false, origin: 'bundled',
   createdAt: timestamp, updatedAt: timestamp,
 };
 writeFileSync(join(outDir, 'pack.json'), JSON.stringify(pack, null, 2));
 
-const fileLines = ['tray.png', ...packStickers.map((s) => s.file)]
-  .map((f) => `      '${f}': require('./starter-basics/${f}'),`)
+const moves = await generateStarterMoves(root, timestamp);
+const manifestPacks = [
+  { dir: 'starter-basics', files: ['tray.png', ...packStickers.map((s) => s.file)] },
+  moves,
+];
+const entries = manifestPacks
+  .map(({ dir, files }) => {
+    const fileLines = files.map((f) => `      '${f}': require('./${dir}/${f}'),`).join('\n');
+    return `  {\n    pack: require('./${dir}/pack.json'),\n    files: {\n${fileLines}\n    },\n  },`;
+  })
   .join('\n');
 writeFileSync(
   join(root, 'index.ts'),
@@ -78,16 +89,11 @@ writeFileSync(
 import type { BundledPackSource } from '@/services/bundledPacks';
 
 /** Bump when bundled pack contents change so existing installs re-copy them. */
-export const BUNDLED_PACKS_VERSION = 1;
+export const BUNDLED_PACKS_VERSION = ${BUNDLED_PACKS_VERSION};
 
 export const bundledPacks: BundledPackSource[] = [
-  {
-    pack: require('./starter-basics/pack.json'),
-    files: {
-${fileLines}
-    },
-  },
+${entries}
 ];
 `,
 );
-console.log(`Generated ${packStickers.length} stickers in ${outDir}`);
+console.log(`Generated ${packStickers.length} static stickers in ${outDir} and ${moves.files.length - 1} animated stickers in ${join(root, moves.dir)}`);
