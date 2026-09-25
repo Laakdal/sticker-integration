@@ -88,27 +88,34 @@ if (!zero.delay || zero.delay.some((d) => d !== 0)) {
 }
 
 /**
- * Walks the top-level RIFF chunks of a WebP file and sets every ANMF chunk's 24-bit little-endian Duration
- * field (payload offset 12..14) to 0. Chunk layout: 4-byte FourCC + 4-byte LE size + payload, padded to even
- * length. The 12-byte `RIFF....WEBP` file header precedes the chunk list.
+ * Walks the top-level RIFF chunks of [buffer], calling `visit(fourCc, payloadStart, size)` for each. Chunk
+ * layout: 4-byte FourCC + 4-byte LE size + payload, padded to even length. The 12-byte `RIFF....WEBP` file
+ * header (validated by callers) precedes the chunk list.
  */
+function forEachRiffChunk(buffer, visit) {
+  let offset = 12;
+  while (offset + 8 <= buffer.length) {
+    const fourCc = buffer.toString('ascii', offset, offset + 4);
+    const size = buffer.readUInt32LE(offset + 4);
+    const payloadStart = offset + 8;
+    visit(fourCc, payloadStart, size);
+    offset = payloadStart + size + (size % 2);
+  }
+}
+
+/** Sets every ANMF chunk's 24-bit little-endian Duration field (payload offset 12..14) to 0. */
 function patchAnmfDurationsToZero(file) {
   const buffer = readFileSync(file);
   if (buffer.length < 12 || buffer.toString('ascii', 0, 4) !== 'RIFF' || buffer.toString('ascii', 8, 12) !== 'WEBP') {
     throw new Error(`${file} is not a RIFF/WEBP file`);
   }
-  let offset = 12;
   let patched = 0;
-  while (offset + 8 <= buffer.length) {
-    const fourCc = buffer.toString('ascii', offset, offset + 4);
-    const size = buffer.readUInt32LE(offset + 4);
-    const payloadStart = offset + 8;
+  forEachRiffChunk(buffer, (fourCc, payloadStart) => {
     if (fourCc === 'ANMF') {
       buffer.writeUIntLE(0, payloadStart + 12, 3);
       patched++;
     }
-    offset = payloadStart + size + (size % 2);
-  }
+  });
   if (patched === 0) throw new Error(`${file} has no ANMF chunks to patch`);
   writeFileSync(file, buffer);
 }
@@ -116,16 +123,9 @@ function patchAnmfDurationsToZero(file) {
 /** Reads ANMF frame count and each frame's 24-bit LE Duration field directly from the RIFF bytes. */
 function readAnmfDurationsMs(file) {
   const buffer = readFileSync(file);
-  let offset = 12;
   const durationsMs = [];
-  while (offset + 8 <= buffer.length) {
-    const fourCc = buffer.toString('ascii', offset, offset + 4);
-    const size = buffer.readUInt32LE(offset + 4);
-    const payloadStart = offset + 8;
-    if (fourCc === 'ANMF') {
-      durationsMs.push(buffer.readUIntLE(payloadStart + 12, 3));
-    }
-    offset = payloadStart + size + (size % 2);
-  }
+  forEachRiffChunk(buffer, (fourCc, payloadStart) => {
+    if (fourCc === 'ANMF') durationsMs.push(buffer.readUIntLE(payloadStart + 12, 3));
+  });
   return { frameCount: durationsMs.length, durationsMs };
 }

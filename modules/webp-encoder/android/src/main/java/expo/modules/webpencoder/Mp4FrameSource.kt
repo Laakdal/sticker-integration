@@ -91,7 +91,11 @@ class Mp4FrameSource private constructor(
         times.sort()
         val first = times[0]
         return IntArray(times.size) { ((times[it] - first) / 1000).toInt() }
+      } catch (e: EncoderException) {
+        throw e
       } catch (e: IOException) {
+        throw EncoderException(ErrorCode.DECODE_FAILED, "${file.name} could not be read as video: ${e.message}", e)
+      } catch (e: RuntimeException) {
         throw EncoderException(ErrorCode.DECODE_FAILED, "${file.name} could not be read as video: ${e.message}", e)
       } finally {
         extractor.release()
