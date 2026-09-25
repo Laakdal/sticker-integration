@@ -14,6 +14,7 @@ import {
   StickerDetailsSheet,
   StickerGrid,
   useAddToWhatsApp,
+  useAsyncAction,
   usePack,
   usePackValidation,
   useWhatsAppStatus,
@@ -34,8 +35,9 @@ export default function PackScreen() {
     readLatest: () => usePacksStore.getState().packs[id],
     validate,
   });
-  const { status } = useWhatsAppStatus(id, pack?.imageDataVersion ?? 0);
+  const { status, refresh: refreshStatus } = useWhatsAppStatus(id, pack?.imageDataVersion ?? 0);
   const actions = usePacksStore.getState();
+  const duplicate = useAsyncAction(() => actions.duplicatePack(id));
   const [openStickerId, setOpenStickerId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +54,7 @@ export default function PackScreen() {
   const readOnly = pack.origin === 'bundled';
   const openSticker = pack.stickers.find((s) => s.id === openStickerId) ?? null;
   const run = (task: Promise<unknown>) => task.catch((e: Error) => setError(e.message));
+  const snackbar = whatsapp.message ?? duplicate.error ?? error;
 
   return (
     <View style={styles.root}>
@@ -65,7 +68,10 @@ export default function PackScreen() {
       <Screen scroll>
         {readOnly ? (
           <DuplicatePackBanner
-            onDuplicate={() => run(actions.duplicatePack(pack.id).then((copy) => router.replace({ pathname: '/pack/[id]', params: { id: copy.id } })))}
+            pending={duplicate.pending}
+            onDuplicate={() =>
+              duplicate.run().then((copy) => copy && router.replace({ pathname: '/pack/[id]', params: { id: copy.id } }))
+            }
           />
         ) : null}
         <View style={styles.section}>
@@ -86,7 +92,7 @@ export default function PackScreen() {
       </Screen>
       <View style={[styles.footer, { backgroundColor: colors.elevation.level2, paddingBottom: 16 + insets.bottom }]}>
         <ValidationBar count={pack.stickers.length} issues={issues} />
-        <AddToWhatsAppButton disabled={issues.length > 0} pending={whatsapp.pending} onPress={whatsapp.add} />
+        <AddToWhatsAppButton disabled={issues.length > 0} pending={whatsapp.pending} onPress={() => whatsapp.add().then(() => refreshStatus())} />
       </View>
       <StickerDetailsSheet
         pack={pack}
@@ -114,8 +120,16 @@ export default function PackScreen() {
           run(actions.deletePack(pack.id).then(() => router.back()));
         }}
       />
-      <Snackbar visible={!!(whatsapp.message ?? error)} onDismiss={() => { whatsapp.clearMessage(); setError(null); }} duration={4000}>
-        {whatsapp.message ?? error ?? ''}
+      <Snackbar
+        visible={!!snackbar}
+        onDismiss={() => {
+          whatsapp.clearMessage();
+          duplicate.clearError();
+          setError(null);
+        }}
+        duration={4000}
+      >
+        {snackbar ?? ''}
       </Snackbar>
     </View>
   );
