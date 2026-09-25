@@ -1,0 +1,64 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.webpencoder'
+version = '1.0.0'
+
+def safeExtGet(String prop, Object fallback) {
+  rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+}
+
+// Same ABIs as the app (gradle.properties `reactNativeArchitectures`); override with -PreactNativeArchitectures=x86_64.
+def nativeAbis = (rootProject.findProperty('reactNativeArchitectures') ?: 'armeabi-v7a,arm64-v8a,x86,x86_64')
+  .toString().split(',').collect { it.trim() }.findAll { !it.isEmpty() }
+
+android {
+  namespace "expo.modules.webpencoder"
+  ndkVersion safeExtGet('ndkVersion', '27.0.12077973')
+
+  defaultConfig {
+    minSdkVersion 28
+    versionCode 1
+    versionName "1.0.0"
+    testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    externalNativeBuild {
+      cmake {
+        arguments "-DANDROID_STL=c++_static"
+        cppFlags "-std=c++17"
+      }
+    }
+    ndk {
+      abiFilters.addAll(nativeAbis)
+    }
+  }
+
+  externalNativeBuild {
+    cmake {
+      path "src/main/cpp/CMakeLists.txt"
+      version "3.22.1"
+    }
+  }
+
+  packaging {
+    jniLibs {
+      // The instrumented-test APK also packages React Native's copies of these.
+      pickFirsts += ['**/libc++_shared.so', '**/libfbjni.so']
+    }
+  }
+
+  testOptions {
+    unitTests.returnDefaultValues = true
+  }
+}
+
+dependencies {
+  implementation 'com.github.bumptech.glide:gifdecoder:4.16.0'
+
+  testImplementation 'junit:junit:4.13.2'
+
+  androidTestImplementation 'junit:junit:4.13.2'
+  androidTestImplementation 'androidx.test:runner:1.6.2'
+  androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+}
