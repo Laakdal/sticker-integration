@@ -1,4 +1,5 @@
 import { FlashList } from '@shopify/flash-list';
+import { StyleSheet, View } from 'react-native';
 import { Banner } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -6,11 +7,6 @@ import { EmptyState, SectionHeader } from '@/components';
 import type { Pack } from '@/domain/types';
 
 import { PackCard } from './PackCard';
-
-type Row =
-  | { type: 'header'; key: string; title: string }
-  | { type: 'pack'; key: string; pack: Pack }
-  | { type: 'empty'; key: string };
 
 interface Props {
   myPacks: Pack[];
@@ -20,34 +16,40 @@ interface Props {
 
 export function PackList({ myPacks, quarantined, onOpenPack }: Props) {
   const insets = useSafeAreaInsets();
-  const rows: Row[] = [
-    { type: 'header', key: 'h-mine', title: 'My packs' },
-    ...(myPacks.length
-      ? myPacks.map((pack): Row => ({ type: 'pack', key: pack.id, pack }))
-      : [{ type: 'empty', key: 'empty' } as const]),
-  ];
+  const banner = (
+    <Banner visible={quarantined.length > 0} icon="alert">
+      {`${quarantined.length} ${quarantined.length === 1 ? 'pack' : 'packs'} could not be read and were moved to quarantine.`}
+    </Banner>
+  );
+
+  if (myPacks.length === 0) {
+    return (
+      <View style={styles.root}>
+        {banner}
+        <View style={[styles.emptyContainer, { paddingBottom: 96 + insets.bottom }]}>
+          <EmptyState icon="sticker-plus-outline" title="No packs yet" body="Tap New pack to create your first sticker pack." />
+        </View>
+      </View>
+    );
+  }
 
   return (
     <FlashList
-      data={rows}
-      keyExtractor={(row) => row.key}
-      getItemType={(row) => row.type}
+      data={myPacks}
+      keyExtractor={(pack) => pack.id}
       contentContainerStyle={{ paddingBottom: 96 + insets.bottom }}
       ListHeaderComponent={
-        <Banner visible={quarantined.length > 0} icon="alert">
-          {`${quarantined.length} ${quarantined.length === 1 ? 'pack' : 'packs'} could not be read and were moved to quarantine.`}
-        </Banner>
+        <>
+          {banner}
+          <SectionHeader title="My packs" />
+        </>
       }
-      renderItem={({ item }) => {
-        switch (item.type) {
-          case 'header':
-            return <SectionHeader title={item.title} />;
-          case 'empty':
-            return <EmptyState icon="sticker-plus-outline" title="No packs yet" body="Tap New pack to create your first sticker pack." />;
-          case 'pack':
-            return <PackCard pack={item.pack} onPress={() => onOpenPack(item.pack.id)} />;
-        }
-      }}
+      renderItem={({ item }) => <PackCard pack={item} onPress={() => onOpenPack(item.id)} />}
     />
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+});

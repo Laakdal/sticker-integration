@@ -26,15 +26,17 @@ describe('PackList', () => {
     expect(screen.queryByText('Starter packs')).toBeNull();
   });
 
-  it('shows an empty state when there are no user packs', async () => {
+  it('shows an empty state when there are no user packs, without the My packs header', async () => {
     await renderWithProviders(<PackList myPacks={[]} quarantined={[]} onOpenPack={jest.fn()} />);
     await flushBannerAnimation();
     expect(screen.getByText('No packs yet')).toBeTruthy();
+    expect(screen.queryByText('My packs')).toBeNull();
   });
 
-  it('warns about quarantined packs', async () => {
+  it('warns about quarantined packs even when the pack list is empty', async () => {
     await renderWithProviders(<PackList myPacks={[]} quarantined={['x', 'y']} onOpenPack={jest.fn()} />);
     await flushBannerAnimation();
     expect(screen.getByText(/2 packs could not be read/)).toBeTruthy();
+    expect(screen.getByText('No packs yet')).toBeTruthy();
   });
 });
