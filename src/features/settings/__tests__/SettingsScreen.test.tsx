@@ -1,26 +1,39 @@
-import * as material3 from '@pchmn/expo-material3-theme';
-import { fireEvent, screen } from '@testing-library/react-native';
+import { router } from 'expo-router';
+import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
+import { Text } from 'react-native';
 
-import SettingsScreen from '../../../../app/(drawer)/settings';
+import * as DrawerLayout from '../../../../app/(drawer)/_layout';
+import * as SettingsScreen from '../../../../app/(drawer)/settings';
+import * as RootLayout from '../../../../app/_layout';
+import * as DisplaySettingsScreen from '../../../../app/settings/display';
+import * as GifSettingsScreen from '../../../../app/settings/gif';
+import * as NewPacksSettingsScreen from '../../../../app/settings/new-packs';
 import { DEFAULT_SETTINGS } from '@/store/createSettingsStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { renderWithProviders } from '@/test-utils/render';
 
 jest.mock('expo-constants', () => ({ __esModule: true, default: { expoConfig: { name: 'Sticker Maker', version: '1.0.0' } } }));
 
-// The real app store: react-native-mmkv runs on its in-memory instance under Jest (jest.setup.ts).
-const settings = () => useSettingsStore.getState();
+// The root layout's bootstrap (file storage, native modules) is covered elsewhere.
+jest.mock('@/features/packs', () => ({
+  useBootstrap: () => ({ ready: true, loadError: null, retry: jest.fn() }),
+}));
 
-/** Paper's segmented buttons expose the selected segment through `accessibilityState.checked`. */
-const expectSelected = (name: string) =>
-  expect(screen.getByRole('button', { name }).props.accessibilityState).toMatchObject({ checked: true });
+const routes = {
+  _layout: RootLayout,
+  '(drawer)/_layout': DrawerLayout,
+  '(drawer)/index': () => <Text>Home screen</Text>,
+  '(drawer)/settings': SettingsScreen,
+  'settings/gif': GifSettingsScreen,
+  'settings/display': DisplaySettingsScreen,
+  'settings/new-packs': NewPacksSettingsScreen,
+};
 
 const ENV_KEYS = ['EXPO_PUBLIC_KLIPY_API_KEY', 'EXPO_PUBLIC_GIPHY_API_KEY'] as const;
 const savedEnv = Object.fromEntries(ENV_KEYS.map((k) => [k, process.env[k]]));
 
 beforeEach(() => {
   useSettingsStore.setState(DEFAULT_SETTINGS);
-  process.env.EXPO_PUBLIC_KLIPY_API_KEY = 'from-env';
+  delete process.env.EXPO_PUBLIC_KLIPY_API_KEY;
   delete process.env.EXPO_PUBLIC_GIPHY_API_KEY;
 });
 
@@ -31,101 +44,55 @@ afterAll(() => {
   }
 });
 
+/** renderRouter() attaches the route helpers to the promise it returns, so keep a reference to it. */
+async function renderSettings() {
+  const rendered = renderRouter(routes, { initialUrl: '/settings' });
+  await rendered;
+  return { pathname: () => rendered.getPathname() };
+}
+
 describe('Settings screen', () => {
-  it('shows every section', async () => {
-    await renderWithProviders(<SettingsScreen />);
-    for (const title of ['GIF search', 'Display', 'New packs', 'About']) expect(screen.getByText(title)).toBeTruthy();
+  it('lists the categories with a summary of their current values', async () => {
+    useSettingsStore.setState({ gifProvider: 'giphy', contentRating: 'g', giphyApiKey: 'saved', reduceMotion: true, lastPublisher: 'Jane' });
+    await renderSettings();
+    expect(screen.getByText('GIF search & API')).toBeTruthy();
+    expect(screen.getByText('Giphy · G · key set')).toBeTruthy();
+    expect(screen.getByText('Display')).toBeTruthy();
+    // jest.setup.ts reports a device without wallpaper colours.
+    expect(screen.getByText('Wallpaper colours unavailable · Reduce motion on')).toBeTruthy();
+    expect(screen.getByText('New packs')).toBeTruthy();
+    expect(screen.getByText('Default author: Jane')).toBeTruthy();
   });
 
-  it('reads and writes the GIF provider', async () => {
-    useSettingsStore.setState({ gifProvider: 'giphy' });
-    await renderWithProviders(<SettingsScreen />);
-    expectSelected('Giphy');
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Klipy' }));
-    expect(settings().gifProvider).toBe('klipy');
-    expectSelected('Klipy');
+  it('counts a key from .env in the GIF summary', async () => {
+    process.env.EXPO_PUBLIC_KLIPY_API_KEY = 'from-env';
+    await renderSettings();
+    expect(screen.getByText('Klipy · PG-13 · key set')).toBeTruthy();
   });
 
-  it('reads and writes the API keys, trimmed, with the .env status of each provider', async () => {
-    useSettingsStore.setState({ giphyApiKey: 'saved-giphy' });
-    await renderWithProviders(<SettingsScreen />);
-    expect(screen.getByText('Empty: uses the key from .env (.env key found)')).toBeTruthy();
-    expect(screen.getByLabelText('Giphy API key').props.value).toBe('saved-giphy');
+  it.each([
+    ['GIF search & API', '/settings/gif', 'Klipy API key'],
+    ['Display', '/settings/display', 'Reduce motion'],
+    ['New packs', '/settings/new-packs', 'Default author'],
+  ])('opens %s above the drawer with a back arrow', async (title, pathname, field) => {
+    const app = await renderSettings();
+    await fireEvent.press(screen.getByText(title));
+    await act(async () => jest.runOnlyPendingTimers());
 
-    const klipy = screen.getByLabelText('Klipy API key');
-    await fireEvent.changeText(klipy, ' my-klipy ');
-    await fireEvent(klipy, 'blur');
-    expect(settings().klipyApiKey).toBe('my-klipy');
+    expect(app.pathname()).toBe(pathname);
+    expect(screen.getByLabelText(field)).toBeTruthy();
+    expect(screen.queryByLabelText('Open navigation menu')).toBeNull();
+    expect(router.canGoBack()).toBe(true);
 
-    const giphy = screen.getByLabelText('Giphy API key');
-    await fireEvent.changeText(giphy, '   ');
-    await fireEvent(giphy, 'blur');
-    expect(settings().giphyApiKey).toBe('');
-    expect(screen.getByText('Empty: uses the key from .env (no .env key)')).toBeTruthy();
+    await act(async () => router.back());
+    expect(app.pathname()).toBe('/settings');
   });
 
-  it('reads and writes the content rating', async () => {
-    useSettingsStore.setState({ contentRating: 'pg' });
-    await renderWithProviders(<SettingsScreen />);
-    expectSelected('PG');
-
-    await fireEvent.press(screen.getByRole('button', { name: 'R' }));
-    expect(settings().contentRating).toBe('r');
-    await fireEvent.press(screen.getByRole('button', { name: 'PG-13' }));
-    expect(settings().contentRating).toBe('pg-13');
-    await fireEvent.press(screen.getByRole('button', { name: 'G' }));
-    expect(settings().contentRating).toBe('g');
-  });
-
-  it('reads and writes reduce motion', async () => {
-    await renderWithProviders(<SettingsScreen />);
-    const toggle = screen.getByRole('switch', { name: 'Reduce motion' });
-    expect(toggle).not.toBeChecked();
-
-    await fireEvent(toggle, 'valueChange', true);
-    expect(settings().reduceMotion).toBe(true);
-    expect(screen.getByRole('switch', { name: 'Reduce motion' })).toBeChecked();
-  });
-
-  describe('wallpaper colours', () => {
-    let supported: jest.ReplaceProperty<boolean> | undefined;
-    afterEach(() => supported?.restore());
-
-    it('reads and writes the setting on Android 12 or newer', async () => {
-      supported = jest.replaceProperty(material3, 'isDynamicThemeSupported', true);
-      await renderWithProviders(<SettingsScreen />);
-      expect(screen.getByText('Android 12 or newer')).toBeTruthy();
-      const toggle = screen.getByRole('switch', { name: 'Use wallpaper colours' });
-      expect(toggle).toBeChecked();
-      expect(toggle).toBeEnabled();
-
-      await fireEvent(toggle, 'valueChange', false);
-      expect(settings().useDynamicColor).toBe(false);
-      expect(screen.getByRole('switch', { name: 'Use wallpaper colours' })).not.toBeChecked();
-    });
-
-    it('is disabled with an explanation on older Android', async () => {
-      await renderWithProviders(<SettingsScreen />);
-      expect(screen.getByText('Needs Android 12 or newer')).toBeTruthy();
-      expect(screen.getByRole('switch', { name: 'Use wallpaper colours' })).toBeDisabled();
-    });
-  });
-
-  it('reads and writes the default author, trimmed', async () => {
-    useSettingsStore.setState({ lastPublisher: 'Jane' });
-    await renderWithProviders(<SettingsScreen />);
-    const author = screen.getByLabelText('Default author');
-    expect(author.props.value).toBe('Jane');
-
-    await fireEvent.changeText(author, '  Jane Doe ');
-    await fireEvent(author, 'blur');
-    expect(settings().lastPublisher).toBe('Jane Doe');
-  });
-
-  it('shows the app name and version', async () => {
-    await renderWithProviders(<SettingsScreen />);
-    expect(screen.getByText('Sticker Maker')).toBeTruthy();
+  it('shows the app name and version in a row that does not navigate', async () => {
+    const app = await renderSettings();
     expect(screen.getByText('Version 1.0.0')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Version 1.0.0'));
+    await act(async () => jest.runOnlyPendingTimers());
+    expect(app.pathname()).toBe('/settings');
   });
 });

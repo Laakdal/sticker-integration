@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ErrorState, LoadingOverlay } from '@/components';
 import { useBootstrap } from '@/features/packs';
+import { SETTINGS_CATEGORIES } from '@/features/settings';
 import { useAppTheme } from '@/theme';
 
 // A deep link straight to a detail screen (e.g. stickermaker://pack/<id>) still has the
@@ -37,6 +38,10 @@ export default function RootLayout() {
       >
         {/* The drawer brings its own header (with the menu button). */}
         <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
+        {/* Settings categories open above the drawer, with a back arrow instead of the menu. */}
+        {SETTINGS_CATEGORIES.map(({ id, title }) => (
+          <Stack.Screen key={id} name={`settings/${id}`} options={{ title }} />
+        ))}
       </Stack>
     );
   }

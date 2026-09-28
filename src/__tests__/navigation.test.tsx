@@ -21,12 +21,20 @@ function PackStub() {
   return <Text>{`Pack ${id}`}</Text>;
 }
 
+/** The settings sub-screens are covered by src/features/settings/__tests__. */
+function SettingsStub() {
+  return <Text>Settings category</Text>;
+}
+
 const routes = {
   _layout: RootLayout,
   '(drawer)/_layout': DrawerLayout,
   '(drawer)/index': HomeStub,
   '(drawer)/settings': SettingsScreen,
   'pack/[id]': PackStub,
+  'settings/gif': SettingsStub,
+  'settings/display': SettingsStub,
+  'settings/new-packs': SettingsStub,
 };
 
 const MENU = 'Open navigation menu';
@@ -60,13 +68,13 @@ describe('navigation', () => {
     await fireEvent.press(screen.getByRole('button', { name: /Settings/ }));
     await act(async () => jest.runOnlyPendingTimers());
     expect(app.pathname()).toBe('/settings');
-    expect(screen.getByText('GIF search')).toBeTruthy();
+    expect(screen.getByText('GIF search & API')).toBeTruthy();
   });
 
   it('opens /settings directly', async () => {
     const app = await renderApp('/settings');
     expect(app.pathname()).toBe('/settings');
-    expect(screen.getByText('GIF search')).toBeTruthy();
+    expect(screen.getByText('GIF search & API')).toBeTruthy();
   });
 
   it('keeps /pack/[id] above the drawer, without the menu button, with the packs list behind it', async () => {

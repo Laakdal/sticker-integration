@@ -103,7 +103,9 @@ src/features/
     components/  ExportOptionsSheet, ImportProgress, ImportSummary
     hooks/       useExportPack, useImportPack
   settings/
-    components/  ProviderSettings, ApiKeyField, StorageUsage
+    components/  SettingsCategoryList, AboutSection, ProviderSettings, ApiKeyField,
+                 ContentRatingPicker, DisplaySettings, DefaultAuthorField, StorageUsage
+    hooks/       useSettingsSummaries (over the pure settingsSummaries), useTextDraft
 src/components/  Screen, SectionHeader, StickerImage (expo-image + reduce-motion),
                  EmptyState, ErrorState, ConfirmDialog, LoadingOverlay
 src/theme/       Material 3 theme: resolveAppTheme (pure: colour scheme + setting + wallpaper
@@ -123,7 +125,10 @@ app/                     expo-router screens
   editor/batch.tsx       Batch queue for multi-selected stills
   media.tsx              Media sources: tabs "Device" (gallery) and "GIF Search"
   import-export.tsx      Import/Export
-  settings.tsx           Settings
+  settings.tsx           Settings (category list; a drawer screen)
+  settings/gif.tsx       Settings → GIF search & API   (settings/* are pushed on the root Stack)
+  settings/display.tsx   Settings → Display
+  settings/new-packs.tsx Settings → New packs
 src/
   features/              per-feature components + hooks (packs, editor, gifs, gallery, transfer)
   services/
@@ -328,7 +333,13 @@ Output is always a 512×512 canvas, and the source aspect ratio is **always pres
 See §9.
 
 ### Settings (`app/settings`)
-GIF provider (Klipy | Giphy); API key overrides (defaults from `.env`); content rating; use wallpaper colours (Android 12+); reduce motion; storage used + clear cache; about.
+An M3 list of categories (a drawer screen). Each row has a leading icon, a title and a one-line summary of its current values (from the pure `settingsSummaries`), and opens a sub-screen pushed on the root Stack (header with back arrow, no drawer):
+- **GIF search & API** (`/settings/gif`) — provider (Klipy | Giphy), API key overrides (defaults from `.env`), content rating. Summary e.g. "Klipy · PG-13 · no key set" (a key counts when the active provider has a saved key or an `.env` key).
+- **Display** (`/settings/display`) — *Use wallpaper colours* (Material You; disabled with "Needs Android 12 or newer" on older devices), *Reduce motion*. Summary e.g. "Wallpaper colours on · Reduce motion off".
+- **New packs** (`/settings/new-packs`) — default author. Summary "Default author: <name>" or "Default author: not set".
+- **About** — app name and version; does not navigate.
+
+Planned: storage used + clear cache.
 
 ## 9. Import / Export
 
