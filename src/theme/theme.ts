@@ -1,33 +1,35 @@
+import { createMaterial3Theme, type Material3Scheme, type Material3Theme } from '@pchmn/expo-material3-theme';
 import { MD3DarkTheme, MD3LightTheme, type MD3Theme } from 'react-native-paper';
 
-const brand = { primary: '#1B7F5A', secondary: '#4F6358', tertiary: '#3C6472' };
+/** The app's own colour: the source of the scheme used when wallpaper colours are off or unavailable. */
+export const FALLBACK_SOURCE_COLOR = '#1B7F5A';
 
-export const lightTheme: MD3Theme = {
-  ...MD3LightTheme,
-  colors: {
-    ...MD3LightTheme.colors,
-    primary: brand.primary,
-    onPrimary: '#FFFFFF',
-    primaryContainer: '#A4F2CE',
-    onPrimaryContainer: '#002115',
-    secondary: brand.secondary,
-    tertiary: brand.tertiary,
-    background: '#F6FBF6',
-    surface: '#F6FBF6',
-  },
-};
+export type ColorSchemeName = 'light' | 'dark';
 
-export const darkTheme: MD3Theme = {
-  ...MD3DarkTheme,
-  colors: {
-    ...MD3DarkTheme.colors,
-    primary: '#88D6B3',
-    onPrimary: '#003826',
-    primaryContainer: '#005139',
-    onPrimaryContainer: '#A4F2CE',
-    secondary: '#B6CCBF',
-    tertiary: '#A4CDDC',
-    background: '#0F1512',
-    surface: '#0F1512',
-  },
-};
+/** Paper's MD3 colours plus the newer M3 tokens (surfaceContainer*, surfaceBright/Dim, …). */
+export type AppColors = MD3Theme['colors'] & Material3Scheme;
+export type AppTheme = Omit<MD3Theme, 'colors'> & { colors: AppColors };
+
+/** Lays a full M3 scheme over Paper's MD3 base theme, so every Paper token stays defined. */
+export function toPaperTheme(scheme: Material3Scheme, colorScheme: ColorSchemeName): AppTheme {
+  const base = colorScheme === 'dark' ? MD3DarkTheme : MD3LightTheme;
+  return { ...base, colors: { ...base.colors, ...scheme } };
+}
+
+const fallback = createMaterial3Theme(FALLBACK_SOURCE_COLOR);
+export const lightTheme: AppTheme = toPaperTheme(fallback.light, 'light');
+export const darkTheme: AppTheme = toPaperTheme(fallback.dark, 'dark');
+
+export interface ThemeInputs {
+  colorScheme: ColorSchemeName;
+  /** Settings → Display → Use wallpaper colours. */
+  useDynamicColor: boolean;
+  /** The wallpaper-derived schemes, or null where the device has none (before Android 12). */
+  systemTheme: Material3Theme | null;
+}
+
+/** The Paper theme for the current system colour scheme, from the wallpaper when allowed and available. */
+export function resolveAppTheme({ colorScheme, useDynamicColor, systemTheme }: ThemeInputs): AppTheme {
+  if (useDynamicColor && systemTheme) return toPaperTheme(systemTheme[colorScheme], colorScheme);
+  return colorScheme === 'dark' ? darkTheme : lightTheme;
+}

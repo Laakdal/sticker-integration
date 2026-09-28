@@ -3,7 +3,7 @@ import type { ReactElement, ReactNode } from 'react';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { lightTheme } from '@/theme/theme';
+import { lightTheme } from '@/theme';
 
 const metrics = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } };
 

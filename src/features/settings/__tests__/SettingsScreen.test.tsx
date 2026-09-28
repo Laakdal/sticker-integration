@@ -1,3 +1,4 @@
+import * as material3 from '@pchmn/expo-material3-theme';
 import { fireEvent, screen } from '@testing-library/react-native';
 
 import SettingsScreen from '../../../../app/(drawer)/settings';
@@ -85,6 +86,30 @@ describe('Settings screen', () => {
     await fireEvent(toggle, 'valueChange', true);
     expect(settings().reduceMotion).toBe(true);
     expect(screen.getByRole('switch', { name: 'Reduce motion' })).toBeChecked();
+  });
+
+  describe('wallpaper colours', () => {
+    let supported: jest.ReplaceProperty<boolean> | undefined;
+    afterEach(() => supported?.restore());
+
+    it('reads and writes the setting on Android 12 or newer', async () => {
+      supported = jest.replaceProperty(material3, 'isDynamicThemeSupported', true);
+      await renderWithProviders(<SettingsScreen />);
+      expect(screen.getByText('Android 12 or newer')).toBeTruthy();
+      const toggle = screen.getByRole('switch', { name: 'Use wallpaper colours' });
+      expect(toggle).toBeChecked();
+      expect(toggle).toBeEnabled();
+
+      await fireEvent(toggle, 'valueChange', false);
+      expect(settings().useDynamicColor).toBe(false);
+      expect(screen.getByRole('switch', { name: 'Use wallpaper colours' })).not.toBeChecked();
+    });
+
+    it('is disabled with an explanation on older Android', async () => {
+      await renderWithProviders(<SettingsScreen />);
+      expect(screen.getByText('Needs Android 12 or newer')).toBeTruthy();
+      expect(screen.getByRole('switch', { name: 'Use wallpaper colours' })).toBeDisabled();
+    });
   });
 
   it('reads and writes the default author, trimmed', async () => {

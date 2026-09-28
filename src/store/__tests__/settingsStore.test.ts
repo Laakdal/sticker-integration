@@ -49,6 +49,13 @@ describe('settings store', () => {
     expect(store.getState().contentRating).toBe('pg-13');
   });
 
+  it('uses wallpaper colours by default and keeps a saved choice', () => {
+    expect(createSettingsStore(memoryStorage()).getState().useDynamicColor).toBe(true);
+
+    const storage = memoryStorage({ settings: JSON.stringify({ state: { useDynamicColor: false }, version: 1 }) });
+    expect(createSettingsStore(storage).getState().useDynamicColor).toBe(false);
+  });
+
   it('drops retired settings saved by an older version', () => {
     const storage = memoryStorage({
       settings: JSON.stringify({ state: { gifProvider: 'giphy', bundledPacksVersion: 3 }, version: 1 }),

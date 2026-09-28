@@ -4,6 +4,7 @@
   "main": "expo-router/entry",
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
+    "@pchmn/expo-material3-theme": "^1.4.0",
     "@shopify/flash-list": "2.0.2",
     "expo": "~57.0.25",
     "expo-asset": "~57.0.18",
@@ -60,6 +61,11 @@
       "^@/(.*)$": "<rootDir>/src/$1",
       "^@modules/(.*)$": "<rootDir>/modules/$1"
     },
+    "transformIgnorePatterns": [
+      "/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|standard-navigation|@pchmn/expo-material3-theme|@material/material-color-utilities))",
+      "/node_modules/react-native-reanimated/plugin/",
+      "/node_modules/@react-native/babel-preset/"
+    ],
     "testPathIgnorePatterns": [
       "/node_modules/",
       "/android/"

@@ -12,15 +12,17 @@ import {
 } from '@/features/settings';
 import { envGifApiKey } from '@/services/gif/envKeys';
 import { useSettingsStore } from '@/store/settingsStore';
+import { isDynamicColorSupported } from '@/theme';
 
 export default function SettingsScreen() {
   const settings = useSettingsStore(
-    useShallow(({ gifProvider, klipyApiKey, giphyApiKey, contentRating, reduceMotion, lastPublisher }) => ({
+    useShallow(({ gifProvider, klipyApiKey, giphyApiKey, contentRating, reduceMotion, useDynamicColor, lastPublisher }) => ({
       gifProvider,
       klipyApiKey,
       giphyApiKey,
       contentRating,
       reduceMotion,
+      useDynamicColor,
       lastPublisher,
     })),
   );
@@ -46,7 +48,13 @@ export default function SettingsScreen() {
         <ContentRatingPicker value={settings.contentRating} onChange={(v) => setSetting('contentRating', v)} />
       </View>
       <SectionHeader title="Display" />
-      <DisplaySettings reduceMotion={settings.reduceMotion} onChangeReduceMotion={(v) => setSetting('reduceMotion', v)} />
+      <DisplaySettings
+        useDynamicColor={settings.useDynamicColor}
+        dynamicColorSupported={isDynamicColorSupported()}
+        onChangeUseDynamicColor={(v) => setSetting('useDynamicColor', v)}
+        reduceMotion={settings.reduceMotion}
+        onChangeReduceMotion={(v) => setSetting('reduceMotion', v)}
+      />
       <SectionHeader title="New packs" />
       <View style={styles.group}>
         <DefaultAuthorField value={settings.lastPublisher} onSave={(author) => setSetting('lastPublisher', author)} />

@@ -11,6 +11,8 @@ export interface SettingsValues {
   giphyApiKey: string;
   contentRating: ContentRating;
   reduceMotion: boolean;
+  /** Use the Android 12+ wallpaper colour scheme (Material You) where the device provides one. */
+  useDynamicColor: boolean;
   /** The author name last used to create a pack; pre-fills the "New pack" dialog. */
   lastPublisher: string;
 }
@@ -25,6 +27,7 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   giphyApiKey: '',
   contentRating: 'pg-13',
   reduceMotion: false,
+  useDynamicColor: true,
   lastPublisher: '',
 };
 

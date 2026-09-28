@@ -32,3 +32,12 @@ jest.mock('react-native-mmkv', () => ({
 // the app gets on RN 0.86.
 // (The package's `exports` hide the file, so it is mocked by path.)
 jest.mock('./node_modules/react-native-drawer-layout/lib/module/views/InteractionManager', () => ({ InteractionManager: undefined }));
+
+// @pchmn/expo-material3-theme reads the wallpaper palette through a native module that doesn't
+// exist under Jest. Keep its colour generation (pure JS) and report no dynamic colour support;
+// tests that need wallpaper colours replace `isDynamicThemeSupported` and stub `getMaterial3Theme`.
+jest.mock('@pchmn/expo-material3-theme', () => {
+  const actual = jest.requireActual('@pchmn/expo-material3-theme');
+  // `__esModule` keeps one shared module object, so a replaced property is seen by every importer.
+  return { __esModule: true, ...actual, isDynamicThemeSupported: false, getMaterial3Theme: jest.fn(actual.getMaterial3Theme) };
+});
