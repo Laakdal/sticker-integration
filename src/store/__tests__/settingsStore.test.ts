@@ -41,11 +41,25 @@ describe('settings store', () => {
 
   it('rehydrates saved values synchronously', () => {
     const storage = memoryStorage({
+      settings: JSON.stringify({ state: { gifProvider: 'giphy', lastPublisher: 'Jane' }, version: 1 }),
+    });
+    const store = createSettingsStore(storage);
+    expect(store.getState().gifProvider).toBe('giphy');
+    expect(store.getState().lastPublisher).toBe('Jane');
+    expect(store.getState().contentRating).toBe('pg-13');
+  });
+
+  it('drops retired settings saved by an older version', () => {
+    const storage = memoryStorage({
       settings: JSON.stringify({ state: { gifProvider: 'giphy', bundledPacksVersion: 3 }, version: 1 }),
     });
     const store = createSettingsStore(storage);
     expect(store.getState().gifProvider).toBe('giphy');
-    expect(store.getState().bundledPacksVersion).toBe(3);
-    expect(store.getState().contentRating).toBe('pg-13');
+    expect(store.getState()).not.toHaveProperty('bundledPacksVersion');
+
+    store.getState().setSetting('reduceMotion', true);
+    const saved = JSON.parse(storage.data.settings!).state;
+    expect(saved).not.toHaveProperty('bundledPacksVersion');
+    expect(saved).toMatchObject({ gifProvider: 'giphy', reduceMotion: true });
   });
 });

@@ -1,13 +1,6 @@
 import { LIMITS } from '@/domain/limits';
 import { createPackStorage, TRAY_FILE } from '@/services/packStorage';
-import {
-  createPacksStore,
-  PackFullError,
-  PackTypeMismatchError,
-  ReadOnlyPackError,
-  selectBundledPacks,
-  selectMyPacks,
-} from '@/store/createPacksStore';
+import { createPacksStore, PackFullError, PackTypeMismatchError, selectMyPacks } from '@/store/createPacksStore';
 import { createMemoryFileStore } from '@/test-utils/memoryFileStore';
 import { makePack, makeSticker } from '@/test-utils/fixtures';
 
@@ -100,29 +93,14 @@ describe('packs store', () => {
     await expect(store.getState().reorderStickers(pack.id, ['a', 'zzz'])).rejects.toThrow('Invalid sticker order');
   });
 
-  it('treats bundled packs as read-only', async () => {
-    const { store, storage } = setup();
-    await storage.save(makePack({ id: 'bundled', origin: 'bundled' }));
+  it('edits and deletes imported packs like user packs', async () => {
+    const { store, storage, onDisk } = setup();
+    await storage.save(makePack({ id: 'imp', origin: 'imported' }));
     await store.getState().load();
-    await expect(store.getState().updateDetails('bundled', { name: 'x' })).rejects.toBeInstanceOf(ReadOnlyPackError);
-    await expect(store.getState().deletePack('bundled')).rejects.toBeInstanceOf(ReadOnlyPackError);
-  });
-
-  it('duplicates a pack with its files as an editable user pack', async () => {
-    const { store, storage, fs } = setup();
-    const source = makePack({ id: 'bundled', origin: 'bundled', name: 'N'.repeat(128) });
-    await storage.save(source);
-    await fs.writeText(storage.fileUri('bundled', TRAY_FILE), 'tray');
-    for (const s of source.stickers) await fs.writeText(storage.fileUri('bundled', s.file), 'img');
-    await store.getState().load();
-
-    const copy = await store.getState().duplicatePack('bundled');
-    expect(copy).toMatchObject({ id: 'id1', origin: 'user', imageDataVersion: 1 });
-    expect(copy.name).toHaveLength(128);
-    expect(copy.name.endsWith(' (copy)')).toBe(true);
-    expect(copy.stickers.every((s) => !s.editable)).toBe(true);
-    expect(fs.files.get(storage.fileUri('id1', TRAY_FILE))).toBe('tray');
-    expect(fs.files.get(storage.fileUri('id1', source.stickers[0]!.file))).toBe('img');
+    await store.getState().updateDetails('imp', { name: 'Renamed' });
+    expect((await onDisk('imp')).name).toBe('Renamed');
+    await store.getState().deletePack('imp');
+    expect(store.getState().packs.imp).toBeUndefined();
   });
 
   it('deletes a user pack from disk and state', async () => {
@@ -149,15 +127,11 @@ describe('packs store', () => {
     expect(store.getState().packs[pack.id]).toEqual(disk);
   });
 
-  it('selects my packs newest first and bundled packs by name', async () => {
-    const { store, storage } = setup();
-    await storage.save(makePack({ id: 'z', origin: 'bundled', name: 'Zed' }));
-    await storage.save(makePack({ id: 'y', origin: 'bundled', name: 'Alpha' }));
-    await store.getState().load();
+  it('selects my packs newest first', async () => {
+    const { store } = setup();
     const first = await store.getState().createPack({ name: 'Old', publisher: 'B' });
     await store.getState().createPack({ name: 'New', publisher: 'B' });
     await store.getState().updateDetails(first.id, { name: 'Old but edited' });
     expect(selectMyPacks(store.getState()).map((p) => p.name)).toEqual(['Old but edited', 'New']);
-    expect(selectBundledPacks(store.getState()).map((p) => p.name)).toEqual(['Alpha', 'Zed']);
   });
 });

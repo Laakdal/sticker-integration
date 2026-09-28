@@ -1,4 +1,4 @@
-export type PackOrigin = 'user' | 'imported' | 'bundled';
+export type PackOrigin = 'user' | 'imported';
 
 export interface Sticker {
   id: string;

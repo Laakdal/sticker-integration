@@ -7,14 +7,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ConfirmDialog, EmptyState, Screen, StickerImage } from '@/components';
 import {
   AddToWhatsAppButton,
-  DuplicatePackBanner,
   isAddedAnywhere,
   PackDetailsForm,
   type PackDetailsFormHandle,
   StickerDetailsSheet,
   StickerGrid,
   useAddToWhatsApp,
-  useAsyncAction,
   usePack,
   usePackValidation,
   useWhatsAppStatus,
@@ -37,7 +35,6 @@ export default function PackScreen() {
   });
   const { status, refresh: refreshStatus } = useWhatsAppStatus(id, pack?.imageDataVersion ?? 0);
   const actions = usePacksStore.getState();
-  const duplicate = useAsyncAction(() => actions.duplicatePack(id));
   const [openStickerId, setOpenStickerId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,29 +48,19 @@ export default function PackScreen() {
     );
   }
 
-  const readOnly = pack.origin === 'bundled';
   const openSticker = pack.stickers.find((s) => s.id === openStickerId) ?? null;
   const run = (task: Promise<unknown>) => task.catch((e: Error) => setError(e.message));
-  const snackbar = whatsapp.message ?? duplicate.error ?? error;
+  const snackbar = whatsapp.message ?? error;
 
   return (
     <View style={styles.root}>
       <Stack.Screen
         options={{
           title: pack.name,
-          headerRight: () =>
-            readOnly ? null : <Appbar.Action icon="delete-outline" accessibilityLabel="Delete pack" onPress={() => setConfirmDelete(true)} />,
+          headerRight: () => <Appbar.Action icon="delete-outline" accessibilityLabel="Delete pack" onPress={() => setConfirmDelete(true)} />,
         }}
       />
       <Screen scroll>
-        {readOnly ? (
-          <DuplicatePackBanner
-            pending={duplicate.pending}
-            onDuplicate={() =>
-              duplicate.run().then((copy) => copy && router.replace({ pathname: '/pack/[id]', params: { id: copy.id } }))
-            }
-          />
-        ) : null}
         <View style={styles.section}>
           <View style={styles.trayRow}>
             <StickerImage uri={packStorage.fileUri(pack.id, pack.trayIcon)} size={64} version={pack.imageDataVersion} animate={false} accessibilityLabel="Tray icon" />
@@ -81,10 +68,9 @@ export default function PackScreen() {
               {isAddedAnywhere(status) ? 'Added to WhatsApp' : 'Tray icon shown in the WhatsApp sticker tray'}
             </Text>
           </View>
-          <PackDetailsForm ref={detailsRef} pack={pack} readOnly={readOnly} onSave={(patch) => run(actions.updateDetails(pack.id, patch))} />
+          <PackDetailsForm ref={detailsRef} pack={pack} onSave={(patch) => run(actions.updateDetails(pack.id, patch))} />
           <StickerGrid
             pack={pack}
-            readOnly={readOnly}
             onReorder={(ids) => run(actions.reorderStickers(pack.id, ids))}
             onOpenSticker={setOpenStickerId}
           />
@@ -97,7 +83,6 @@ export default function PackScreen() {
       <StickerDetailsSheet
         pack={pack}
         sticker={openSticker}
-        readOnly={readOnly}
         onDismiss={() => setOpenStickerId(null)}
         onSave={(patch) => {
           if (openSticker) run(actions.updateSticker(pack.id, openSticker.id, patch));
@@ -124,7 +109,6 @@ export default function PackScreen() {
         visible={!!snackbar}
         onDismiss={() => {
           whatsapp.clearMessage();
-          duplicate.clearError();
           setError(null);
         }}
         duration={4000}

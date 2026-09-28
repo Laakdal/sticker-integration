@@ -18,30 +18,22 @@ async function flushBannerAnimation() {
 }
 
 describe('PackList', () => {
-  it('shows both sections', async () => {
-    await renderWithProviders(
-      <PackList
-        myPacks={[makePack({ id: 'a', name: 'Mine' })]}
-        bundledPacks={[makePack({ id: 'b', name: 'Starter', origin: 'bundled' })]}
-        quarantined={[]}
-        onOpenPack={jest.fn()}
-      />,
-    );
+  it('lists my packs under a single section', async () => {
+    await renderWithProviders(<PackList myPacks={[makePack({ id: 'a', name: 'Mine' })]} quarantined={[]} onOpenPack={jest.fn()} />);
     await flushBannerAnimation();
     expect(screen.getByText('My packs')).toBeTruthy();
-    expect(screen.getByText('Starter packs')).toBeTruthy();
     expect(screen.getByText('Mine')).toBeTruthy();
-    expect(screen.getByText('Starter')).toBeTruthy();
+    expect(screen.queryByText('Starter packs')).toBeNull();
   });
 
   it('shows an empty state when there are no user packs', async () => {
-    await renderWithProviders(<PackList myPacks={[]} bundledPacks={[]} quarantined={[]} onOpenPack={jest.fn()} />);
+    await renderWithProviders(<PackList myPacks={[]} quarantined={[]} onOpenPack={jest.fn()} />);
     await flushBannerAnimation();
     expect(screen.getByText('No packs yet')).toBeTruthy();
   });
 
   it('warns about quarantined packs', async () => {
-    await renderWithProviders(<PackList myPacks={[]} bundledPacks={[]} quarantined={['x', 'y']} onOpenPack={jest.fn()} />);
+    await renderWithProviders(<PackList myPacks={[]} quarantined={['x', 'y']} onOpenPack={jest.fn()} />);
     await flushBannerAnimation();
     expect(screen.getByText(/2 packs could not be read/)).toBeTruthy();
   });

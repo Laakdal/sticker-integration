@@ -6,7 +6,7 @@ import { useShallow } from 'zustand/react/shallow';
 
 import { Screen } from '@/components';
 import { NewPackDialog, PackList, useNewPackFlow } from '@/features/packs';
-import { selectBundledPacks, selectMyPacks } from '@/store/createPacksStore';
+import { selectMyPacks } from '@/store/createPacksStore';
 import { usePacksStore } from '@/store/packsStore';
 import { useSettingsStore } from '@/store/settingsStore';
 
@@ -14,7 +14,6 @@ export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const myPacks = usePacksStore(useShallow(selectMyPacks));
-  const bundledPacks = usePacksStore(useShallow(selectBundledPacks));
   const quarantined = usePacksStore((s) => s.quarantined);
   const createPack = usePacksStore((s) => s.createPack);
   const lastPublisher = useSettingsStore((s) => s.lastPublisher);
@@ -34,7 +33,6 @@ export default function HomeScreen() {
     <Screen>
       <PackList
         myPacks={myPacks}
-        bundledPacks={bundledPacks}
         quarantined={quarantined}
         onOpenPack={(id) => router.push({ pathname: '/pack/[id]', params: { id } })}
       />

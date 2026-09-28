@@ -12,13 +12,12 @@ import { packStorage } from '@/store/packsStore';
 interface Props {
   pack: Pack;
   sticker: Sticker | null;
-  readOnly: boolean;
   onSave: (patch: StickerPatch) => void;
   onDelete: () => void;
   onDismiss: () => void;
 }
 
-export function StickerDetailsSheet({ pack, sticker, readOnly, onSave, onDelete, onDismiss }: Props) {
+export function StickerDetailsSheet({ pack, sticker, onSave, onDelete, onDismiss }: Props) {
   const { colors } = useTheme();
   const [emojis, setEmojis] = useState<string[]>(sticker?.emojis ?? []);
   const [a11y, setA11y] = useState(sticker?.accessibilityText ?? '');
@@ -42,34 +41,25 @@ export function StickerDetailsSheet({ pack, sticker, readOnly, onSave, onDelete,
           <StickerImage uri={packStorage.fileUri(pack.id, sticker.file)} size={160} version={pack.imageDataVersion} />
           <Text variant="labelSmall">{`${Math.ceil(sticker.sizeBytes / 1024)} KB · ${sticker.animated ? 'animated' : 'static'}`}</Text>
         </View>
-        {readOnly ? (
-          <>
-            <Text variant="titleMedium">{sticker.emojis.join(' ')}</Text>
-            {sticker.accessibilityText ? <Text variant="bodyMedium">{sticker.accessibilityText}</Text> : null}
-          </>
-        ) : (
-          <>
-            <EmojiTagger value={emojis} onChange={setEmojis} />
-            <TextInput
-              mode="outlined"
-              label="Accessibility text"
-              accessibilityLabel="Accessibility text"
-              value={a11y}
-              onChangeText={setA11y}
-              maxLength={a11yMax}
-              multiline
-            />
-            <HelperText type="info">{`Describes the sticker for screen readers. ${a11y.length}/${a11yMax}`}</HelperText>
-            <View style={styles.actions}>
-              <Button textColor={colors.error} onPress={() => setConfirmDelete(true)}>
-                Delete
-              </Button>
-              <Button mode="contained" onPress={() => onSave({ emojis, accessibilityText: a11y.trim() || undefined })}>
-                Save
-              </Button>
-            </View>
-          </>
-        )}
+        <EmojiTagger value={emojis} onChange={setEmojis} />
+        <TextInput
+          mode="outlined"
+          label="Accessibility text"
+          accessibilityLabel="Accessibility text"
+          value={a11y}
+          onChangeText={setA11y}
+          maxLength={a11yMax}
+          multiline
+        />
+        <HelperText type="info">{`Describes the sticker for screen readers. ${a11y.length}/${a11yMax}`}</HelperText>
+        <View style={styles.actions}>
+          <Button textColor={colors.error} onPress={() => setConfirmDelete(true)}>
+            Delete
+          </Button>
+          <Button mode="contained" onPress={() => onSave({ emojis, accessibilityText: a11y.trim() || undefined })}>
+            Save
+          </Button>
+        </View>
       </Modal>
       <ConfirmDialog
         visible={confirmDelete}

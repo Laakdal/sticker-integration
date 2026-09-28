@@ -14,7 +14,7 @@ describe('StickerDetailsSheet', () => {
   it('saves edited emojis and accessibility text', async () => {
     const onSave = jest.fn();
     await renderWithProviders(
-      <StickerDetailsSheet pack={pack} sticker={sticker} readOnly={false} onSave={onSave} onDelete={jest.fn()} onDismiss={jest.fn()} />,
+      <StickerDetailsSheet pack={pack} sticker={sticker} onSave={onSave} onDelete={jest.fn()} onDismiss={jest.fn()} />,
     );
     await fireEvent.press(screen.getByLabelText('Remove 🔥'));
     await fireEvent.changeText(screen.getByLabelText('Accessibility text'), 'waving hello');
@@ -25,20 +25,11 @@ describe('StickerDetailsSheet', () => {
   it('asks for confirmation before deleting', async () => {
     const onDelete = jest.fn();
     await renderWithProviders(
-      <StickerDetailsSheet pack={pack} sticker={sticker} readOnly={false} onSave={jest.fn()} onDelete={onDelete} onDismiss={jest.fn()} />,
+      <StickerDetailsSheet pack={pack} sticker={sticker} onSave={jest.fn()} onDelete={onDelete} onDismiss={jest.fn()} />,
     );
     await fireEvent.press(screen.getByText('Delete'));
     expect(onDelete).not.toHaveBeenCalled();
     await fireEvent.press(screen.getByText('Delete sticker'));
     expect(onDelete).toHaveBeenCalled();
-  });
-
-  it('hides editing controls when read-only', async () => {
-    await renderWithProviders(
-      <StickerDetailsSheet pack={pack} sticker={sticker} readOnly onSave={jest.fn()} onDelete={jest.fn()} onDismiss={jest.fn()} />,
-    );
-    expect(screen.queryByText('Save')).toBeNull();
-    expect(screen.queryByText('Delete')).toBeNull();
-    expect(screen.getByText('😀 🔥')).toBeTruthy();
   });
 });

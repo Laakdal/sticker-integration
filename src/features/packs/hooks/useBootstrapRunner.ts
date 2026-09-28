@@ -18,7 +18,7 @@ export function useBootstrapRunner(run: () => Promise<BootstrapResult>): Bootstr
   useEffect(() => {
     let cancelled = false;
     run()
-      .catch((e: unknown): BootstrapResult => ({ installError: null, loadError: toError(e) }))
+      .catch((e: unknown): BootstrapResult => ({ loadError: toError(e) }))
       .then((result) => {
         if (!cancelled) setSettled({ ...result, attempt });
       });
@@ -31,7 +31,6 @@ export function useBootstrapRunner(run: () => Promise<BootstrapResult>): Bootstr
   const ready = settled?.attempt === attempt;
   return {
     ready,
-    installError: ready ? settled.installError : null,
     loadError: ready ? settled.loadError : null,
     retry,
   };

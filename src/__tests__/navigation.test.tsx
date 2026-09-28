@@ -6,11 +6,10 @@ import * as DrawerLayout from '../../app/(drawer)/_layout';
 import * as SettingsScreen from '../../app/(drawer)/settings';
 import * as RootLayout from '../../app/_layout';
 
-// The root layout's bootstrap (bundled packs, file storage, native modules) is covered elsewhere;
+// The root layout's bootstrap (file storage, native modules) is covered elsewhere;
 // here it is always ready so the test exercises only the navigators.
 jest.mock('@/features/packs', () => ({
-  useBootstrap: () => ({ ready: true, installError: null, loadError: null, retry: jest.fn() }),
-  InstallErrorBanner: () => null,
+  useBootstrap: () => ({ ready: true, loadError: null, retry: jest.fn() }),
 }));
 
 function HomeStub() {

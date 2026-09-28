@@ -6,7 +6,7 @@ import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ErrorState, LoadingOverlay } from '@/components';
-import { InstallErrorBanner, useBootstrap } from '@/features/packs';
+import { useBootstrap } from '@/features/packs';
 import { darkTheme, lightTheme } from '@/theme/theme';
 
 // A deep link straight to a detail screen (e.g. stickermaker://pack/<id>) still has the
@@ -16,7 +16,7 @@ export const unstable_settings = { anchor: '(drawer)' };
 export default function RootLayout() {
   const scheme = useColorScheme();
   const theme = scheme === 'dark' ? darkTheme : lightTheme;
-  const { ready, installError, loadError, retry } = useBootstrap();
+  const { ready, loadError, retry } = useBootstrap();
 
   let content;
   if (!ready) {
@@ -29,19 +29,16 @@ export default function RootLayout() {
     );
   } else {
     content = (
-      <>
-        <InstallErrorBanner error={installError} />
-        <Stack
-          screenOptions={{
-            headerStyle: { backgroundColor: theme.colors.surface },
-            headerTintColor: theme.colors.onSurface,
-            contentStyle: { backgroundColor: theme.colors.background },
-          }}
-        >
-          {/* The drawer brings its own header (with the menu button). */}
-          <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
-        </Stack>
-      </>
+      <Stack
+        screenOptions={{
+          headerStyle: { backgroundColor: theme.colors.surface },
+          headerTintColor: theme.colors.onSurface,
+          contentStyle: { backgroundColor: theme.colors.background },
+        }}
+      >
+        {/* The drawer brings its own header (with the menu button). */}
+        <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
+      </Stack>
     );
   }
 

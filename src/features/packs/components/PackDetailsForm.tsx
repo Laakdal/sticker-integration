@@ -17,12 +17,10 @@ export interface PackDetailsFormHandle {
 
 export function PackDetailsForm({
   pack,
-  readOnly,
   onSave,
   ref,
 }: {
   pack: Pack;
-  readOnly: boolean;
   onSave: (patch: PackDetailsPatch) => unknown;
   ref?: Ref<PackDetailsFormHandle>;
 }) {
@@ -42,7 +40,6 @@ export function PackDetailsForm({
             onFocus={() => draft.focus(field)}
             onBlur={() => draft.blur(field)}
             maxLength={LIMITS.maxTextLength}
-            disabled={readOnly}
           />
           <HelperText type="info" style={styles.counter}>{`${draft.values[field].length}/${LIMITS.maxTextLength}`}</HelperText>
         </View>

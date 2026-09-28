@@ -1,6 +1,6 @@
 import type { Pack, PackOrigin, Sticker } from '@/domain/types';
 
-const ORIGINS: readonly PackOrigin[] = ['user', 'imported', 'bundled'];
+const ORIGINS: readonly PackOrigin[] = ['user', 'imported'];
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !Array.isArray(v);

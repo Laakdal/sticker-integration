@@ -14,24 +14,17 @@ type Row =
 
 interface Props {
   myPacks: Pack[];
-  bundledPacks: Pack[];
   quarantined: string[];
   onOpenPack: (packId: string) => void;
 }
 
-export function PackList({ myPacks, bundledPacks, quarantined, onOpenPack }: Props) {
+export function PackList({ myPacks, quarantined, onOpenPack }: Props) {
   const insets = useSafeAreaInsets();
   const rows: Row[] = [
     { type: 'header', key: 'h-mine', title: 'My packs' },
     ...(myPacks.length
       ? myPacks.map((pack): Row => ({ type: 'pack', key: pack.id, pack }))
       : [{ type: 'empty', key: 'empty' } as const]),
-    ...(bundledPacks.length
-      ? [
-          { type: 'header', key: 'h-bundled', title: 'Starter packs' } as const,
-          ...bundledPacks.map((pack): Row => ({ type: 'pack', key: pack.id, pack })),
-        ]
-      : []),
   ];
 
   return (

@@ -36,7 +36,3 @@ See `docs/qa/plan-1-checklist.md` for the comprehensive manual device checklist.
 ## Project layout
 
 See `docs/superpowers/specs/2026-09-25-whatsapp-sticker-maker-design.md` §4. Plans live in `docs/superpowers/plans/`.
-
-## Regenerating the starter pack
-
-`npm run generate:bundled` re-renders `assets/bundled-packs/`. Bump `BUNDLED_PACKS_VERSION` (the generator writes it) when the contents change so installed apps re-copy the pack.

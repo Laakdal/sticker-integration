@@ -70,15 +70,12 @@ describe('packStorage', () => {
     expect(await storage.loadAll()).toEqual({ packs: [], quarantined: [] });
   });
 
-  it('removes packs and files, copies files, reports sizes', async () => {
+  it('removes packs and files, reports sizes', async () => {
     const { fs, storage } = setup();
     await storage.save(makePack({ id: 'a' }));
     await fs.writeText(storage.fileUri('a', 's.webp'), '12345');
     expect(await storage.fileSize('a', 's.webp')).toBe(5);
     expect(await storage.fileSize('a', 'missing.webp')).toBeNull();
-
-    await storage.copyFiles('a', 'b', ['s.webp']);
-    expect(fs.files.get(storage.fileUri('b', 's.webp'))).toBe('12345');
 
     await storage.removeFile('a', 's.webp');
     expect(await storage.fileSize('a', 's.webp')).toBeNull();

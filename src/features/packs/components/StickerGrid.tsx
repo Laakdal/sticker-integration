@@ -10,12 +10,11 @@ import { StickerTile } from './StickerTile';
 
 interface Props {
   pack: Pack;
-  readOnly: boolean;
   onReorder: (orderedIds: string[]) => void;
   onOpenSticker: (stickerId: string) => void;
 }
 
-export function StickerGrid({ pack, readOnly, onReorder, onOpenSticker }: Props) {
+export function StickerGrid({ pack, onReorder, onOpenSticker }: Props) {
   if (pack.stickers.length === 0) {
     return <EmptyState icon="sticker-outline" title="No stickers yet" />;
   }
@@ -26,7 +25,6 @@ export function StickerGrid({ pack, readOnly, onReorder, onOpenSticker }: Props)
         columns={4}
         rowGap={8}
         columnGap={8}
-        sortEnabled={!readOnly}
         keyExtractor={(s) => s.id}
         onDragEnd={({ data }) => {
           const ids = data.map((s) => s.id);

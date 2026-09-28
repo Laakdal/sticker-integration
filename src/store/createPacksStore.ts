@@ -15,12 +15,6 @@ export class PackNotFoundError extends Error {
     this.name = 'PackNotFoundError';
   }
 }
-export class ReadOnlyPackError extends Error {
-  constructor(packId: string) {
-    super(`Starter packs are read-only (${packId}). Duplicate it to edit.`);
-    this.name = 'ReadOnlyPackError';
-  }
-}
 export class PackFullError extends Error {
   constructor() {
     super(`A pack can hold at most ${LIMITS.maxStickers} stickers.`);
@@ -54,10 +48,7 @@ export interface PacksState {
   /** Call after `tray.png` was replaced on disk so WhatsApp refreshes it. */
   touchTray(packId: string): Promise<void>;
   deletePack(packId: string): Promise<void>;
-  duplicatePack(packId: string): Promise<Pack>;
 }
-
-const COPY_SUFFIX = ' (copy)';
 
 export function createPacksStore({ storage, newId, now }: PacksDeps) {
   /** Per-pack promise chain: mutations of one pack run strictly in call order. */
@@ -70,17 +61,16 @@ export function createPacksStore({ storage, newId, now }: PacksDeps) {
   }
 
   return create<PacksState>()((set, get) => {
-    function requireEditable(packId: string): Pack {
+    function requirePack(packId: string): Pack {
       const pack = get().packs[packId];
       if (!pack) throw new PackNotFoundError(packId);
-      if (pack.origin === 'bundled') throw new ReadOnlyPackError(packId);
       return pack;
     }
 
     /** Applies `mutate` to the latest state of the pack, saves it, then publishes it. */
     function commit(packId: string, mutate: (pack: Pack) => Pack): Promise<Pack> {
       return enqueue(packId, async () => {
-        const current = requireEditable(packId);
+        const current = requirePack(packId);
         const next: Pack = {
           ...mutate(current),
           imageDataVersion: current.imageDataVersion + 1,
@@ -172,7 +162,7 @@ export function createPacksStore({ storage, newId, now }: PacksDeps) {
       },
 
       async deletePack(packId) {
-        requireEditable(packId);
+        requirePack(packId);
         await enqueue(packId, async () => {
           await storage.remove(packId);
           set((s) => {
@@ -181,38 +171,9 @@ export function createPacksStore({ storage, newId, now }: PacksDeps) {
           });
         });
       },
-
-      async duplicatePack(packId) {
-        const source = get().packs[packId];
-        if (!source) throw new PackNotFoundError(packId);
-        const id = newId();
-        const timestamp = now().toISOString();
-        const baseName = source.name.slice(0, LIMITS.maxTextLength - COPY_SUFFIX.length);
-        await storage.copyFiles(packId, id, [source.trayIcon, ...source.stickers.map((s) => s.file)]);
-        const copy: Pack = {
-          ...source,
-          id,
-          name: `${baseName}${COPY_SUFFIX}`,
-          origin: 'user',
-          stickers: source.stickers.map((s) => ({ ...s, editable: false })),
-          imageDataVersion: 1,
-          createdAt: timestamp,
-          updatedAt: timestamp,
-        };
-        await storage.save(copy);
-        set((s) => ({ packs: { ...s.packs, [id]: copy } }));
-        return copy;
-      },
     };
   });
 }
 
 export const selectMyPacks = (state: PacksState): Pack[] =>
-  Object.values(state.packs)
-    .filter((p) => p.origin !== 'bundled')
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-
-export const selectBundledPacks = (state: PacksState): Pack[] =>
-  Object.values(state.packs)
-    .filter((p) => p.origin === 'bundled')
-    .sort((a, b) => a.name.localeCompare(b.name));
+  Object.values(state.packs).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));

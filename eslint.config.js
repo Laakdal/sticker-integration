@@ -5,7 +5,7 @@ const globals = require('globals');
 
 module.exports = defineConfig([
   expoConfig,
-  { ignores: ['android/*', 'dist/*', 'assets/bundled-packs/index.ts'] },
+  { ignores: ['android/*', 'dist/*'] },
   {
     files: ['**/__tests__/**', 'jest.setup.ts', 'src/test-utils/**'],
     languageOptions: { globals: globals.jest },

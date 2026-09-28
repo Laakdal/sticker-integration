@@ -22,7 +22,6 @@ export interface PackStorage {
   save(pack: Pack): Promise<void>;
   remove(packId: string): Promise<void>;
   removeFile(packId: string, fileName: string): Promise<void>;
-  copyFiles(fromId: string, toId: string, fileNames: string[]): Promise<void>;
   fileSize(packId: string, fileName: string): Promise<number | null>;
 }
 
@@ -92,13 +91,6 @@ export function createPackStorage(fs: FileStore, rootUri: string): PackStorage {
 
     async removeFile(packId, fileName) {
       await fs.remove(fileUri(packId, fileName));
-    },
-
-    async copyFiles(fromId, toId, fileNames) {
-      await fs.ensureDir(packDirUri(toId));
-      for (const name of fileNames) {
-        await fs.copy(fileUri(fromId, name), fileUri(toId, name));
-      }
     },
 
     async fileSize(packId, fileName) {

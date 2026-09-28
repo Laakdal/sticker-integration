@@ -17,6 +17,7 @@ describe('packSchema', () => {
     ['not an object', 'x'],
     ['missing id', { ...makePack(), id: undefined }],
     ['bad origin', { ...makePack(), origin: 'stolen' }],
+    ['the retired bundled origin', { ...makePack(), origin: 'bundled' }],
     ['stickers not an array', { ...makePack(), stickers: 'no' }],
     ['sticker without emojis array', { ...makePack(), stickers: [{ id: 'a', file: 'a.webp', animated: false, sizeBytes: 1, editable: false }] }],
     ['sticker file with a slash', { ...makePack(), stickers: [{ id: 'a', file: '../a.webp', emojis: ['😀'], animated: false, sizeBytes: 1, editable: false }] }],

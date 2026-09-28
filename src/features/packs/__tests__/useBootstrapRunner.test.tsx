@@ -15,8 +15,8 @@ describe('useBootstrapRunner', () => {
     const run = () => pending.promise;
     const { result } = await renderHook(() => useBootstrapRunner(run));
     expect(result.current.ready).toBe(false);
-    await act(async () => pending.resolve({ installError: null, loadError: null }));
-    expect(result.current).toMatchObject({ ready: true, installError: null, loadError: null });
+    await act(async () => pending.resolve({ loadError: null }));
+    expect(result.current).toMatchObject({ ready: true, loadError: null });
   });
 
   it('exposes a load error and recovers on retry', async () => {
@@ -24,7 +24,7 @@ describe('useBootstrapRunner', () => {
     const second = deferred();
     const run = jest.fn().mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
     const { result } = await renderHook(() => useBootstrapRunner(run));
-    await act(async () => first.resolve({ installError: null, loadError: new Error('storage unreadable') }));
+    await act(async () => first.resolve({ loadError: new Error('storage unreadable') }));
     expect(result.current.ready).toBe(true);
     expect(result.current.loadError?.message).toBe('storage unreadable');
 
@@ -32,7 +32,7 @@ describe('useBootstrapRunner', () => {
     expect(run).toHaveBeenCalledTimes(2);
     expect(result.current.ready).toBe(false);
 
-    await act(async () => second.resolve({ installError: null, loadError: null }));
+    await act(async () => second.resolve({ loadError: null }));
     expect(result.current).toMatchObject({ ready: true, loadError: null });
   });
 
@@ -42,13 +42,5 @@ describe('useBootstrapRunner', () => {
     await act(async () => {});
     expect(result.current.ready).toBe(true);
     expect(result.current.loadError?.message).toBe('crash');
-  });
-
-  it('keeps a non-blocking install error', async () => {
-    const run = () => Promise.resolve({ installError: new Error('disk full'), loadError: null });
-    const { result } = await renderHook(() => useBootstrapRunner(run));
-    await act(async () => {});
-    expect(result.current).toMatchObject({ ready: true, loadError: null });
-    expect(result.current.installError?.message).toBe('disk full');
   });
 });
