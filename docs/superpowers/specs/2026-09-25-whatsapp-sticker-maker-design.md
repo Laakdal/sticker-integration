@@ -262,6 +262,7 @@ Encoder settings on every pass: lossy with alpha, `allow_mixed`, tuned `kmin`/`k
   3. If too large at 5 fps and quality 60, lower the quality floor to 25 and search again at 5 fps.
 - FPS steps: chosen fps → 15 → 12 → 10 → 8 → 5 (skipping steps above the chosen fps).
 - Floor: quality 25 at 5 fps still too large → fail with `TOO_LARGE`.
+- Output is always an animated WebP with **at least 2 frames** (WhatsApp treats a sticker as animated only when frameCount > 1). If libwebp collapses identical frames into one, the frame is emitted twice with the duration split (each ≥ 8 ms; 8 + 8 when the total is under 16 ms), before size measurement.
 
 The search logic lives in a pure Kotlin class with an injectable "encode at quality/fps → size" function so it is unit-testable without libwebp.
 
