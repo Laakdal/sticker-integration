@@ -141,6 +141,26 @@ class AnimatedEncodingTest {
     assertEquals("left band is transparent", 0, TestPixels.alpha(frame[256 * 512 + 10]))
   }
 
+  /** libwebp merges identical frames and turns a one-frame animation into a still; stickers must stay animated. */
+  @Test fun motionlessSourceStaysAnimatedWithAtLeastTwoFrames() {
+    val file = File(dir, "motionless.mp4")
+    Mp4Writer.write(file, 320, 240, fps = 30, frameCount = 30) { _, argb -> argb.fill(Fixtures.MP4_COLORS[1]) }
+    val o = options(file, "mp4", "trimEndMs" to 1_000.0)
+    val result = encode(o)
+    val facts = assertValidSticker(o, result)
+    assertTrue("frames ${facts.frameCount}", facts.frameCount >= 2)
+    assertEquals(result.durationMs, facts.frameDurationsMs.sum())
+    TestPixels.assertColorNear(Fixtures.MP4_COLORS[1], firstFrame(o)[256 * 512 + 256], 60, "centre")
+  }
+
+  @Test fun aTrimShorterThanOneFrameStaysAnimatedWithAtLeastTwoFrames() {
+    val o = options(Fixtures.colorsMp4(dir), "mp4", "trimEndMs" to 40.0) // auto 20 fps → one 40 ms sample
+    val result = encode(o)
+    assertEquals(40, result.durationMs)
+    val facts = assertValidSticker(o, result)
+    assertEquals(listOf(20, 20), facts.frameDurationsMs)
+  }
+
   @Test fun noisyMp4IsSizeFittedUnder500KBInBothPriorities() {
     val random = Random(3)
     val file = File(dir, "noise.mp4")

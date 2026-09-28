@@ -173,6 +173,44 @@ JNIEXPORT jbyteArray JNICALL Java_expo_modules_webpencoder_WebpNative_animEncode
   return out;
 }
 
+JNIEXPORT jbyteArray JNICALL Java_expo_modules_webpencoder_WebpNative_animFromSingleFrame(
+    JNIEnv* env, jobject, jbyteArray data, jint firstMs, jint secondMs) {
+  size_t size = 0;
+  uint8_t* bytes = CopyBytes(env, data, &size);
+  if (bytes == nullptr) return nullptr;
+  const WebPData input = {bytes, size};
+  WebPMux* source = WebPMuxCreate(&input, 0);
+  WebPMux* mux = WebPMuxNew();
+  WebPMuxFrameInfo frame;
+  WebPDataInit(&frame.bitstream);
+  WebPData assembled;
+  WebPDataInit(&assembled);
+  int width = 0;
+  int height = 0;
+  // Same animation settings as animEncoderNew: loop forever over a transparent background.
+  const WebPMuxAnimParams params = {0x00000000, 0};
+  bool ok = source != nullptr && mux != nullptr && WebPMuxGetFrame(source, 1, &frame) == WEBP_MUX_OK &&
+            WebPMuxGetCanvasSize(source, &width, &height) == WEBP_MUX_OK &&
+            WebPMuxSetCanvasSize(mux, width, height) == WEBP_MUX_OK &&
+            WebPMuxSetAnimationParams(mux, &params) == WEBP_MUX_OK;
+  // The first frame's image (the full canvas when libwebp emitted a still), shown twice without blending.
+  frame.id = WEBP_CHUNK_ANMF;
+  frame.dispose_method = WEBP_MUX_DISPOSE_NONE;
+  frame.blend_method = WEBP_MUX_NO_BLEND;
+  for (const jint duration : {firstMs, secondMs}) {
+    frame.duration = duration;
+    ok = ok && WebPMuxPushFrame(mux, &frame, 0) == WEBP_MUX_OK;
+  }
+  ok = ok && WebPMuxAssemble(mux, &assembled) == WEBP_MUX_OK;
+  jbyteArray out = ok ? ToByteArray(env, assembled.bytes, assembled.size) : nullptr;
+  WebPDataClear(&assembled);
+  WebPMuxDelete(mux);
+  WebPDataClear(&frame.bitstream);
+  WebPMuxDelete(source);
+  free(bytes);
+  return out;
+}
+
 JNIEXPORT void JNICALL Java_expo_modules_webpencoder_WebpNative_animEncoderDelete(JNIEnv*, jobject, jlong handle) {
   auto* h = reinterpret_cast<AnimEncoder*>(handle);
   if (h == nullptr) return;

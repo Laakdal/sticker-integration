@@ -8,11 +8,16 @@ data class OutputFrame(val cacheIndex: Int, val durationMs: Int)
 /**
  * Builds the frame order and durations of one encode pass over the frame cache (spec §7):
  * fps subsampling on the forward output timeline, then reverse/boomerang as index orderings,
- * with every frame at least 8 ms long.
+ * with every frame at least 8 ms long and at least two frames per pass.
  */
 object OutputSequence {
   fun build(grid: SampleGrid, cacheFps: Int, targetFps: Int, playback: Playback): List<OutputFrame> {
     val forward = mergeShortFrames(select(grid, cacheFps, targetFps))
+    if (forward.size == 1) {
+      // A one-frame sticker would be a still; show the frame twice (NativeAnimBackend keeps both in the file).
+      val (first, second) = twoFrameDurations(forward[0].durationMs)
+      return listOf(forward[0].copy(durationMs = first), forward[0].copy(durationMs = second))
+    }
     return when (playback) {
       Playback.NORMAL -> forward
       Playback.REVERSE -> forward.reversed()
@@ -44,6 +49,15 @@ object OutputSequence {
       val end = if (i + 1 < starts.size) starts[i + 1].second else grid.durationMs
       OutputFrame(index, end - start)
     }
+  }
+
+  /**
+   * Splits [totalMs] over two frames, each at least [minMs] long: the total is kept unless it is under 2 × [minMs].
+   * WhatsApp treats a sticker as animated only if it has more than one frame.
+   */
+  fun twoFrameDurations(totalMs: Int, minMs: Int = Limits.MIN_FRAME_MS): Pair<Int, Int> {
+    val first = maxOf(minMs, totalMs / 2)
+    return first to maxOf(minMs, totalMs - first)
   }
 
   /**

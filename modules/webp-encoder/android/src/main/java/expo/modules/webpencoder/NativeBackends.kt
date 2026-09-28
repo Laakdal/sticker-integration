@@ -37,10 +37,26 @@ object NativeAnimBackend : AnimBackend {
         timestampMs += frame.durationMs
         onFrame(i + 1)
       }
-      return WebpNative.animEncoderAssemble(handle, timestampMs)
+      val bytes = WebpNative.animEncoderAssemble(handle, timestampMs)
         ?: throw EncoderException(ErrorCode.OUT_OF_MEMORY, "Could not assemble the animated WebP.")
+      return keepTwoFrames(bytes, timestampMs)
     } finally {
       WebpNative.animEncoderDelete(handle)
     }
+  }
+
+  /**
+   * libwebp drops frames identical to the previous one (extending its duration) and turns a one-frame animation
+   * into a still, so a motionless clip comes out as a still, which WhatsApp rejects in an animated pack. Such output
+   * is rebuilt as the same picture shown twice, splitting [totalMs] as [OutputSequence.twoFrameDurations].
+   */
+  private fun keepTwoFrames(bytes: ByteArray, totalMs: Int): ByteArray {
+    val info = WebpNative.demuxInfo(bytes)
+      ?: throw EncoderException(ErrorCode.OUT_OF_MEMORY, "Could not read back the assembled WebP.")
+    val facts = WebpFacts.from(info)
+    if (facts.animated && facts.frameCount >= 2) return bytes
+    val (first, second) = OutputSequence.twoFrameDurations(totalMs)
+    return WebpNative.animFromSingleFrame(bytes, first, second)
+      ?: throw EncoderException(ErrorCode.OUT_OF_MEMORY, "Could not rebuild the one-frame WebP as an animation.")
   }
 }

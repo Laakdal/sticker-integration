@@ -39,6 +39,12 @@ object WebpNative {
 
   external fun animEncoderDelete(handle: Long)
 
+  /**
+   * Rebuilds a WebP whose first frame is the whole picture (a still, or a one-frame animation) as an animation
+   * that shows that frame twice, for [firstMs] then [secondMs]; loops forever over a transparent background.
+   */
+  external fun animFromSingleFrame(data: ByteArray, firstMs: Int, secondMs: Int): ByteArray?
+
   /** WebPAnimDecoder over a complete (animated or still) WebP file. Returns 0 if it cannot be parsed. */
   external fun animDecoderNew(data: ByteArray): Long
 

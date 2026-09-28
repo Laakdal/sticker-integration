@@ -28,7 +28,10 @@ class OutputSequenceTest {
 
   @Test fun boomerangOfOneOrTwoFramesIsJustForward() {
     assertEquals(listOf(0, 1), indices(OutputSequence.build(grid(listOf(0, 100), 200), 10, 10, Playback.BOOMERANG)))
-    assertEquals(listOf(0), indices(OutputSequence.build(grid(listOf(0), 100), 10, 10, Playback.BOOMERANG)))
+    assertEquals(
+      listOf(OutputFrame(0, 50), OutputFrame(0, 50)),
+      OutputSequence.build(grid(listOf(0), 100), 10, 10, Playback.BOOMERANG),
+    )
   }
 
   @Test fun lowerFpsSubsamplesTheCache() {
@@ -61,9 +64,9 @@ class OutputSequenceTest {
       listOf(OutputFrame(2, 100), OutputFrame(3, 8)),
       OutputSequence.build(grid(listOf(0, 5, 10, 100), 108), 10, 10, Playback.NORMAL),
     )
-    // a trailing 5 ms frame merges into the previous one
+    // a trailing 5 ms frame merges into the previous one (the lone 105 ms frame is then shown twice)
     assertEquals(
-      listOf(OutputFrame(2, 105)),
+      listOf(OutputFrame(2, 52), OutputFrame(2, 53)),
       OutputSequence.build(grid(listOf(0, 5, 10, 100), 105), 10, 10, Playback.NORMAL),
     )
   }
@@ -77,6 +80,41 @@ class OutputSequenceTest {
 
   @Test fun anAllShortSequenceBecomesOne8msFrame() {
     assertEquals(listOf(OutputFrame(0, 8)), OutputSequence.mergeShortFrames(listOf(OutputFrame(0, 3), OutputFrame(1, 3))))
+  }
+
+  @Test fun aSingleFrameIsShownTwiceSoTheStickerStaysAnimated() {
+    // one 40 ms sample (a trim shorter than one frame step at 20 fps)
+    assertEquals(
+      listOf(OutputFrame(0, 20), OutputFrame(0, 20)),
+      OutputSequence.build(Timeline.sampleGrid(0.0, 40.0, 1.0, 20), 20, 20, Playback.NORMAL),
+    )
+    // an all-short sequence collapses to one 8 ms frame, which becomes 8 + 8 ms
+    assertEquals(
+      listOf(OutputFrame(0, 8), OutputFrame(0, 8)),
+      OutputSequence.build(grid(listOf(0, 3), 6), 10, 10, Playback.REVERSE),
+    )
+  }
+
+  @Test fun twoFrameDurationsKeepTheTotalAndThe8msMinimum() {
+    assertEquals(500 to 500, OutputSequence.twoFrameDurations(1000))
+    assertEquals(50 to 51, OutputSequence.twoFrameDurations(101))
+    assertEquals(8 to 9, OutputSequence.twoFrameDurations(17))
+    assertEquals(8 to 8, OutputSequence.twoFrameDurations(16))
+    assertEquals(8 to 8, OutputSequence.twoFrameDurations(15))
+    assertEquals(8 to 8, OutputSequence.twoFrameDurations(8))
+  }
+
+  @Test fun everyPassHasAtLeastTwoFrames() {
+    for (trimMs in listOf(1.0, 7.0, 16.0, 40.0, 99.0, 150.0)) {
+      val cache = Timeline.sampleGrid(0.0, trimMs, 1.0, 30)
+      for (fps in listOf(30, 20, 10, 5)) {
+        for (playback in Playback.entries) {
+          val frames = OutputSequence.build(cache, 30, fps, playback)
+          assertTrue("trim=$trimMs fps=$fps $playback: $frames", frames.size >= 2)
+          assertTrue("trim=$trimMs fps=$fps $playback: $frames", frames.all { it.durationMs >= Limits.MIN_FRAME_MS })
+        }
+      }
+    }
   }
 
   @Test fun everyFrameLastsAtLeast8ms() {
