@@ -97,13 +97,13 @@ src/features/
     hooks/       useMediaPermission, useMediaLibrary
   gifs/
     components/  GifSearchBar, GifGrid, GifTile, GifPreviewSheet,
-                 ProviderAttribution, ProviderSwitcher
+                 ProviderAttribution, ProviderTabs
     hooks/       useGifSearch (debounce + infinite pagination)
   transfer/
     components/  ExportOptionsSheet, ImportProgress, ImportSummary
     hooks/       useExportPack, useImportPack
   settings/
-    components/  SettingsCategoryList, AboutSection, ProviderSettings, ApiKeyField,
+    components/  SettingsCategoryList, AboutSection, ApiKeyField,
                  ContentRatingPicker, DisplaySettings, DefaultAuthorField, StorageUsage
     hooks/       useSettingsSummaries (over the pure settingsSummaries), useTextDraft
 src/components/  Screen, SectionHeader, StickerImage (expo-image + reduce-motion),
@@ -301,7 +301,7 @@ A single "My packs" section, with an empty state ("No packs yet") when there are
 
 ### Media sources (`app/media`) — tabs
 - **Device:** `expo-media-library` grid; filter chips *All / Images / GIFs / Videos*; multi-select. Permissions: `READ_MEDIA_IMAGES` + `READ_MEDIA_VIDEO` (Android 13+), `READ_EXTERNAL_STORAGE` (Android 9–12); handles Android 14 partial access (`READ_MEDIA_VISUAL_USER_SELECTED`) with a "Select more photos" action. If denied, shows a rationale and falls back to system Photo Picker / document picker.
-- **GIF Search:** debounced search; trending when empty; infinite scroll; low-res preview renditions; tap → full preview → "Add to pack" downloads best MP4/WebP rendition → animated editor. Provider attribution shown; provider switch available.
+- **GIF Search:** one tab per provider (Klipy, Giphy) — both are always available, there is no single active provider; each tab searches/paginates independently (debounced search; trending when empty; infinite scroll; low-res preview renditions) with its own attribution. A provider with no key (saved or `.env`) shows "Add a key in Settings" with a button to `/settings/gif` instead of results. Content rating applies to both tabs. Tap a result → full preview → "Add to pack" downloads best MP4/WebP rendition → animated editor.
 
 Multi-select routing: multiple stills → batch queue (each framed with **Fit** by default, open any in the full editor, "Accept all"); multiple GIFs/videos → sequential animated editor sessions.
 
@@ -334,7 +334,7 @@ See §9.
 
 ### Settings (`app/settings`)
 An M3 list of categories (a drawer screen). Each row has a leading icon, a title and a one-line summary of its current values (from the pure `settingsSummaries`), and opens a sub-screen pushed on the root Stack (header with back arrow, no drawer):
-- **GIF search & API** (`/settings/gif`) — provider (Klipy | Giphy), API key overrides (defaults from `.env`), content rating. Summary e.g. "Klipy · PG-13 · no key set" (a key counts when the active provider has a saved key or an `.env` key).
+- **GIF search & API** (`/settings/gif`) — Klipy API key and Giphy API key overrides (defaults from `.env`), content rating. Summary e.g. "Klipy: key set · Giphy: no key · PG-13" (a provider counts as "key set" when it has a saved key or an `.env` key).
 - **Display** (`/settings/display`) — *Use wallpaper colours* (Material You; disabled with "Needs Android 12 or newer" on older devices), *Reduce motion*. Summary e.g. "Wallpaper colours on · Reduce motion off".
 - **New packs** (`/settings/new-packs`) — default author. Summary "Default author: <name>" or "Default author: not set".
 - **About** — app name and version; does not navigate.
@@ -372,6 +372,8 @@ One rule set, used by the validation bar, importer and pre-flight before "Add to
 Result shape: `{ code: string; message: string; stickerId?: string }[]`.
 
 ## 11. GIF providers
+
+Both providers run at once — there is no single active provider or provider switch. GIF Search (§8) shows one tab per provider, each backed by this interface.
 
 ```ts
 interface GifProvider {

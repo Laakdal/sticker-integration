@@ -5,7 +5,6 @@ export type GifProviderId = 'klipy' | 'giphy';
 export type ContentRating = 'g' | 'pg' | 'pg-13' | 'r';
 
 export interface SettingsValues {
-  gifProvider: GifProviderId;
   /** Empty string means "use the .env default". */
   klipyApiKey: string;
   giphyApiKey: string;
@@ -22,7 +21,6 @@ export interface SettingsState extends SettingsValues {
 }
 
 export const DEFAULT_SETTINGS: SettingsValues = {
-  gifProvider: 'klipy',
   klipyApiKey: '',
   giphyApiKey: '',
   contentRating: 'pg-13',

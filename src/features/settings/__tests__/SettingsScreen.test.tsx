@@ -53,10 +53,10 @@ async function renderSettings() {
 
 describe('Settings screen', () => {
   it('lists the categories with a summary of their current values', async () => {
-    useSettingsStore.setState({ gifProvider: 'giphy', contentRating: 'g', giphyApiKey: 'saved', reduceMotion: true, lastPublisher: 'Jane' });
+    useSettingsStore.setState({ contentRating: 'g', giphyApiKey: 'saved', reduceMotion: true, lastPublisher: 'Jane' });
     await renderSettings();
     expect(screen.getByText('GIF search & API')).toBeTruthy();
-    expect(screen.getByText('Giphy · G · key set')).toBeTruthy();
+    expect(screen.getByText('Klipy: no key · Giphy: key set · G')).toBeTruthy();
     expect(screen.getByText('Display')).toBeTruthy();
     // jest.setup.ts reports a device without wallpaper colours.
     expect(screen.getByText('Wallpaper colours unavailable · Reduce motion on')).toBeTruthy();
@@ -67,7 +67,7 @@ describe('Settings screen', () => {
   it('counts a key from .env in the GIF summary', async () => {
     process.env.EXPO_PUBLIC_KLIPY_API_KEY = 'from-env';
     await renderSettings();
-    expect(screen.getByText('Klipy · PG-13 · key set')).toBeTruthy();
+    expect(screen.getByText('Klipy: key set · Giphy: no key · PG-13')).toBeTruthy();
   });
 
   it.each([

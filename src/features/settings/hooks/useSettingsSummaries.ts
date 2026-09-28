@@ -11,7 +11,6 @@ export function useSettingsSummaries() {
   const values = useSettingsStore(
     useShallow(
       (s): SettingsValues => ({
-        gifProvider: s.gifProvider,
         klipyApiKey: s.klipyApiKey,
         giphyApiKey: s.giphyApiKey,
         contentRating: s.contentRating,

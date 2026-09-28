@@ -1,5 +1,5 @@
 import type { SettingsValues } from '@/store/createSettingsStore';
-import { optionLabel, PROVIDER_OPTIONS, RATING_OPTIONS, type SettingsCategoryId } from './options';
+import { optionLabel, RATING_OPTIONS, type SettingsCategoryId } from './options';
 
 /** Whether the build has a `.env` key for each GIF provider. */
 export interface EnvKeys {
@@ -18,13 +18,12 @@ export function settingsSummaries(
   envKeys: EnvKeys,
   { dynamicColorSupported = true }: { dynamicColorSupported?: boolean } = {},
 ): SettingsSummaries {
-  const provider = values.gifProvider;
-  const savedKey = provider === 'klipy' ? values.klipyApiKey : values.giphyApiKey;
-  const keySet = savedKey.trim() !== '' || envKeys[provider];
+  const keyLabel = (provider: keyof EnvKeys, savedKey: string) =>
+    savedKey.trim() !== '' || envKeys[provider] ? 'key set' : 'no key';
   const gif = [
-    optionLabel(PROVIDER_OPTIONS, provider),
+    `Klipy: ${keyLabel('klipy', values.klipyApiKey)}`,
+    `Giphy: ${keyLabel('giphy', values.giphyApiKey)}`,
     optionLabel(RATING_OPTIONS, values.contentRating),
-    keySet ? 'key set' : 'no key set',
   ];
   const wallpaper = dynamicColorSupported ? onOff(values.useDynamicColor) : 'unavailable';
 

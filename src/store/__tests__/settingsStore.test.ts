@@ -41,10 +41,10 @@ describe('settings store', () => {
 
   it('rehydrates saved values synchronously', () => {
     const storage = memoryStorage({
-      settings: JSON.stringify({ state: { gifProvider: 'giphy', lastPublisher: 'Jane' }, version: 1 }),
+      settings: JSON.stringify({ state: { klipyApiKey: 'saved-key', lastPublisher: 'Jane' }, version: 1 }),
     });
     const store = createSettingsStore(storage);
-    expect(store.getState().gifProvider).toBe('giphy');
+    expect(store.getState().klipyApiKey).toBe('saved-key');
     expect(store.getState().lastPublisher).toBe('Jane');
     expect(store.getState().contentRating).toBe('pg-13');
   });
@@ -58,15 +58,29 @@ describe('settings store', () => {
 
   it('drops retired settings saved by an older version', () => {
     const storage = memoryStorage({
-      settings: JSON.stringify({ state: { gifProvider: 'giphy', bundledPacksVersion: 3 }, version: 1 }),
+      settings: JSON.stringify({ state: { klipyApiKey: 'saved-key', bundledPacksVersion: 3 }, version: 1 }),
     });
     const store = createSettingsStore(storage);
-    expect(store.getState().gifProvider).toBe('giphy');
+    expect(store.getState().klipyApiKey).toBe('saved-key');
     expect(store.getState()).not.toHaveProperty('bundledPacksVersion');
 
     store.getState().setSetting('reduceMotion', true);
     const saved = JSON.parse(storage.data.settings!).state;
     expect(saved).not.toHaveProperty('bundledPacksVersion');
-    expect(saved).toMatchObject({ gifProvider: 'giphy', reduceMotion: true });
+    expect(saved).toMatchObject({ klipyApiKey: 'saved-key', reduceMotion: true });
+  });
+
+  it('drops the retired gifProvider setting from an old blob', () => {
+    const storage = memoryStorage({
+      settings: JSON.stringify({ state: { gifProvider: 'giphy', klipyApiKey: 'saved-key' }, version: 1 }),
+    });
+    const store = createSettingsStore(storage);
+    expect(store.getState().klipyApiKey).toBe('saved-key');
+    expect(store.getState()).not.toHaveProperty('gifProvider');
+
+    store.getState().setSetting('reduceMotion', true);
+    const saved = JSON.parse(storage.data.settings!).state;
+    expect(saved).not.toHaveProperty('gifProvider');
+    expect(saved).toMatchObject({ klipyApiKey: 'saved-key', reduceMotion: true });
   });
 });

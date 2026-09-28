@@ -29,16 +29,6 @@ afterAll(() => {
 });
 
 describe('GIF search & API settings', () => {
-  it('reads and writes the GIF provider', async () => {
-    useSettingsStore.setState({ gifProvider: 'giphy' });
-    await renderWithProviders(<GifSettingsScreen />);
-    expectSelected('Giphy');
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Klipy' }));
-    expect(settings().gifProvider).toBe('klipy');
-    expectSelected('Klipy');
-  });
-
   it('reads and writes the API keys, trimmed, with the .env status of each provider', async () => {
     useSettingsStore.setState({ giphyApiKey: 'saved-giphy' });
     await renderWithProviders(<GifSettingsScreen />);

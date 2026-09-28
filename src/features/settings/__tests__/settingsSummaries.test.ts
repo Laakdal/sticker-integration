@@ -6,26 +6,28 @@ const values = (patch: Partial<SettingsValues> = {}): SettingsValues => ({ ...DE
 
 describe('settingsSummaries', () => {
   describe('GIF search & API', () => {
-    it('names the provider and rating, and says when the provider has no key', () => {
-      expect(settingsSummaries(values(), NO_ENV_KEYS).gif).toBe('Klipy · PG-13 · no key set');
+    it('reports each provider independently, and the rating', () => {
+      expect(settingsSummaries(values(), NO_ENV_KEYS).gif).toBe('Klipy: no key · Giphy: no key · PG-13');
     });
 
-    it('counts a saved key for the active provider', () => {
-      expect(settingsSummaries(values({ gifProvider: 'giphy', giphyApiKey: 'abc', contentRating: 'g' }), NO_ENV_KEYS).gif).toBe(
-        'Giphy · G · key set',
+    it('counts a saved key per provider', () => {
+      expect(settingsSummaries(values({ giphyApiKey: 'abc', contentRating: 'g' }), NO_ENV_KEYS).gif).toBe(
+        'Klipy: no key · Giphy: key set · G',
       );
     });
 
-    it('counts a key from .env for the active provider', () => {
-      expect(settingsSummaries(values({ contentRating: 'r' }), { klipy: true, giphy: false }).gif).toBe('Klipy · R · key set');
+    it('counts a key from .env per provider', () => {
+      expect(settingsSummaries(values({ contentRating: 'r' }), { klipy: true, giphy: false }).gif).toBe(
+        'Klipy: key set · Giphy: no key · R',
+      );
     });
 
-    it("ignores the other provider's keys and blank saved keys", () => {
-      const summary = settingsSummaries(values({ gifProvider: 'giphy', giphyApiKey: '  ', klipyApiKey: 'k', contentRating: 'pg' }), {
+    it('ignores blank saved keys and counts both providers when both have keys', () => {
+      const summary = settingsSummaries(values({ giphyApiKey: '  ', klipyApiKey: 'k', contentRating: 'pg' }), {
         klipy: true,
-        giphy: false,
+        giphy: true,
       });
-      expect(summary.gif).toBe('Giphy · PG · no key set');
+      expect(summary.gif).toBe('Klipy: key set · Giphy: key set · PG');
     });
   });
 

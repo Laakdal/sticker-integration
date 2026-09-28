@@ -2,14 +2,13 @@ import { StyleSheet, View } from 'react-native';
 import { useShallow } from 'zustand/react/shallow';
 
 import { Screen } from '@/components';
-import { ApiKeyField, ContentRatingPicker, ProviderSettings } from '@/features/settings';
+import { ApiKeyField, ContentRatingPicker } from '@/features/settings';
 import { envGifApiKey } from '@/services/gif/envKeys';
 import { useSettingsStore } from '@/store/settingsStore';
 
 export default function GifSettingsScreen() {
   const settings = useSettingsStore(
-    useShallow(({ gifProvider, klipyApiKey, giphyApiKey, contentRating }) => ({
-      gifProvider,
+    useShallow(({ klipyApiKey, giphyApiKey, contentRating }) => ({
       klipyApiKey,
       giphyApiKey,
       contentRating,
@@ -20,7 +19,6 @@ export default function GifSettingsScreen() {
   return (
     <Screen scroll>
       <View style={styles.group}>
-        <ProviderSettings value={settings.gifProvider} onChange={(v) => setSetting('gifProvider', v)} />
         <ApiKeyField
           label="Klipy API key"
           value={settings.klipyApiKey}

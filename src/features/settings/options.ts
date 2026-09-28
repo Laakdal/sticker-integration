@@ -1,9 +1,4 @@
-import type { ContentRating, GifProviderId } from '@/store/createSettingsStore';
-
-export const PROVIDER_OPTIONS: { value: GifProviderId; label: string }[] = [
-  { value: 'klipy', label: 'Klipy' },
-  { value: 'giphy', label: 'Giphy' },
-];
+import type { ContentRating } from '@/store/createSettingsStore';
 
 export const RATING_OPTIONS: { value: ContentRating; label: string }[] = [
   { value: 'g', label: 'G' },
