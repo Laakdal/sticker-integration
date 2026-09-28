@@ -9,7 +9,7 @@ const config: ExpoConfig = {
   userInterfaceStyle: 'automatic',
   icon: './assets/icon.png',
   android: {
-    package: 'com.stickermaker.app',
+    package: 'com.ariiout.customsticker',
     adaptiveIcon: { foregroundImage: './assets/android-icon-foreground.png', backgroundColor: '#ffffff' },
     permissions: ['android.permission.INTERNET'],
     blockedPermissions: [

@@ -2,7 +2,7 @@ import config from '../../app.config';
 
 describe('app.config', () => {
   it('targets the Android package with minSdk 28', () => {
-    expect(config.android?.package).toBe('com.stickermaker.app');
+    expect(config.android?.package).toBe('com.ariiout.customsticker');
     const buildProps = config.plugins?.find(
       (p): p is [string, { android: { minSdkVersion: number } }] =>
         Array.isArray(p) && p[0] === 'expo-build-properties',
