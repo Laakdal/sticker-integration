@@ -56,19 +56,26 @@ describe('navigation', () => {
     const app = await renderApp('/');
     expect(app.pathname()).toBe('/');
     expect(screen.getByText('Home screen')).toBeTruthy();
-    expect(screen.getByText('Sticker Maker')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Sticker Maker' })).toBeTruthy();
     expect(screen.getByLabelText(MENU)).toBeTruthy();
   });
 
   it('lists Sticker packs and Settings in the drawer and navigates to Settings', async () => {
     const app = await renderApp('/');
     await fireEvent.press(screen.getByLabelText(MENU));
-    expect(screen.getByText('Sticker packs')).toBeTruthy();
+    // The drawer's own title repeats the app name shown in the screen header.
+    expect(screen.getAllByText('Sticker Maker')).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Sticker packs' })).toBeSelected();
+    expect(screen.getByRole('button', { name: 'Settings' })).not.toBeSelected();
 
-    await fireEvent.press(screen.getByRole('button', { name: /Settings/ }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Settings' }));
     await act(async () => jest.runOnlyPendingTimers());
     expect(app.pathname()).toBe('/settings');
     expect(screen.getByText('GIF search & API')).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText(MENU));
+    expect(screen.getByRole('button', { name: 'Settings' })).toBeSelected();
+    expect(screen.getByRole('button', { name: 'Sticker packs' })).not.toBeSelected();
   });
 
   it('opens /settings directly', async () => {
