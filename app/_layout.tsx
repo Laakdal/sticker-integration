@@ -9,6 +9,10 @@ import { ErrorState, LoadingOverlay } from '@/components';
 import { InstallErrorBanner, useBootstrap } from '@/features/packs';
 import { darkTheme, lightTheme } from '@/theme/theme';
 
+// A deep link straight to a detail screen (e.g. stickermaker://pack/<id>) still has the
+// drawer screens underneath it, so Back returns to the packs list.
+export const unstable_settings = { anchor: '(drawer)' };
+
 export default function RootLayout() {
   const scheme = useColorScheme();
   const theme = scheme === 'dark' ? darkTheme : lightTheme;
@@ -33,7 +37,10 @@ export default function RootLayout() {
             headerTintColor: theme.colors.onSurface,
             contentStyle: { backgroundColor: theme.colors.background },
           }}
-        />
+        >
+          {/* The drawer brings its own header (with the menu button). */}
+          <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
+        </Stack>
       </>
     );
   }

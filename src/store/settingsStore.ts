@@ -14,3 +14,8 @@ const mmkvStorage: StateStorage = {
 };
 
 export const useSettingsStore = createSettingsStore(mmkvStorage);
+
+/** Whether animated stickers should be shown as still images (Settings → Reduce motion). */
+export function useReduceMotion(): boolean {
+  return useSettingsStore((s) => s.reduceMotion);
+}

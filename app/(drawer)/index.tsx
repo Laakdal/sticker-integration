@@ -1,4 +1,4 @@
-import { Stack, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import { FAB, Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,7 +32,6 @@ export default function HomeScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: 'Sticker Maker' }} />
       <PackList
         myPacks={myPacks}
         bundledPacks={bundledPacks}
