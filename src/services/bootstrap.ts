@@ -1,4 +1,6 @@
 export interface BootstrapDeps {
+  /** Tidies data left by older app versions. Best effort: a failure never blocks loading. */
+  cleanUp: () => Promise<unknown>;
   loadPacks: () => Promise<void>;
 }
 
@@ -12,6 +14,11 @@ export function toError(e: unknown): Error {
 }
 
 export async function runBootstrap(deps: BootstrapDeps): Promise<BootstrapResult> {
+  try {
+    await deps.cleanUp();
+  } catch {
+    // Anything left behind is quarantined by the load below and reported on Home.
+  }
   let loadError: Error | null = null;
   try {
     await deps.loadPacks();

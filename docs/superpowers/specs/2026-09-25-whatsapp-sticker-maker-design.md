@@ -193,6 +193,8 @@ interface Sticker {
 
 Removed on 2026-09-28. The app no longer ships packs, so there is no `origin: 'bundled'`, no read-only pack mode and no "Duplicate to edit". Every pack is editable.
 
+Installs that ran an older version still hold the copied starter packs. On every launch, before packs are loaded, the app deletes `packs/bundled.starter-basics`, `packs/bundled.starter-moves` and any `packs/.staging-bundled.*` folders (`services/legacyStarterPacks.ts`). It touches no other folder, and it is a no-op once they are gone. It must run before loading because their `origin: 'bundled'` no longer parses and they would otherwise be quarantined. A cleanup failure never blocks loading.
+
 ## 6. Native module: `sticker-provider`
 
 **ContentProvider**

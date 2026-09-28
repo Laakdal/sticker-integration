@@ -12,12 +12,13 @@ The app ships with no packs (bundled starter packs were removed on 2026-09-28), 
 | 6 | Dark mode | All screens readable | Not run — pending device |
 | 7 | 3-button navigation | Add to WhatsApp and New pack fully visible above nav bar | Not run — pending device |
 | 8 | Fresh install of release variant (`npx expo run:android --variant release`) | Home shows the "My packs" empty state; New pack creates and opens a pack | Not run — pending device |
-| 9 | Add a valid user pack (≥ 3 stickers, tray icon) to WhatsApp | WhatsApp "Add sticker pack" dialog shows its stickers; confirm → snackbar "Sticker pack added to WhatsApp." | Blocked until Plan 3 (no sticker creation yet) |
-| 10 | Back to Home | "Added" badge on that pack | Blocked until Plan 3 (no sticker creation yet) |
-| 11 | In WhatsApp chat, open stickers | The pack's tray icon appears; stickers send correctly | Blocked until Plan 3 (no sticker creation yet) |
-| 12 | Drag the last sticker to first place | Order persists after restart | Blocked until Plan 3 (no sticker creation yet) |
-| 13 | Tap a sticker → remove all emojis | Tile shows error border; validation lists the issue; Add disabled | Blocked until Plan 3 (no sticker creation yet) |
-| 14 | In a pack with 5 stickers, delete 3 (2 left) | "Add at least 3 stickers (2/3)"; Add disabled | Blocked until Plan 3 (no sticker creation yet) |
-| 15 | Add a valid pack, then reorder in app and re-open WhatsApp sticker tray | New order appears in WhatsApp (imageDataVersion bump) | Blocked until Plan 3 (no sticker creation yet) |
-| 16 | Double-tap Add to WhatsApp quickly on a valid pack | Only one WhatsApp dialog opens | Blocked until Plan 3 (no sticker creation yet) |
-| 17 | Rename a valid pack then immediately tap Add to WhatsApp | WhatsApp dialog shows the new name | Blocked until Plan 3 (no sticker creation yet) |
+| 9 | Install over a build that had starter packs (with at least one user pack) | Starter Basics and Starter Moves are gone from Home; no quarantine banner; user packs unchanged | Not run — pending device |
+| 10 | Add a valid user pack (≥ 3 stickers, tray icon) to WhatsApp | WhatsApp "Add sticker pack" dialog shows its stickers; confirm → snackbar "Sticker pack added to WhatsApp." | Blocked until Plan 3 (no sticker creation yet) |
+| 11 | Back to Home | "Added" badge on that pack | Blocked until Plan 3 (no sticker creation yet) |
+| 12 | In WhatsApp chat, open stickers | The pack's tray icon appears; stickers send correctly | Blocked until Plan 3 (no sticker creation yet) |
+| 13 | Drag the last sticker to first place | Order persists after restart | Blocked until Plan 3 (no sticker creation yet) |
+| 14 | Tap a sticker → remove all emojis | Tile shows error border; validation lists the issue; Add disabled | Blocked until Plan 3 (no sticker creation yet) |
+| 15 | In a pack with 5 stickers, delete 3 (2 left) | "Add at least 3 stickers (2/3)"; Add disabled | Blocked until Plan 3 (no sticker creation yet) |
+| 16 | Add a valid pack, then reorder in app and re-open WhatsApp sticker tray | New order appears in WhatsApp (imageDataVersion bump) | Blocked until Plan 3 (no sticker creation yet) |
+| 17 | Double-tap Add to WhatsApp quickly on a valid pack | Only one WhatsApp dialog opens | Blocked until Plan 3 (no sticker creation yet) |
+| 18 | Rename a valid pack then immediately tap Add to WhatsApp | WhatsApp dialog shows the new name | Blocked until Plan 3 (no sticker creation yet) |
