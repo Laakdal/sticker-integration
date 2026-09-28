@@ -30,6 +30,15 @@ describe('settings store', () => {
     expect(JSON.parse(storage.data.settings!).state.reduceMotion).toBe(true);
   });
 
+  it('persists the last author used for a new pack', () => {
+    const storage = memoryStorage();
+    const store = createSettingsStore(storage);
+    expect(store.getState().lastPublisher).toBe('');
+    store.getState().setSetting('lastPublisher', 'Jane');
+    expect(store.getState().lastPublisher).toBe('Jane');
+    expect(JSON.parse(storage.data.settings!).state.lastPublisher).toBe('Jane');
+  });
+
   it('rehydrates saved values synchronously', () => {
     const storage = memoryStorage({
       settings: JSON.stringify({ state: { gifProvider: 'giphy', bundledPacksVersion: 3 }, version: 1 }),

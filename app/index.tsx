@@ -5,9 +5,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useShallow } from 'zustand/react/shallow';
 
 import { Screen } from '@/components';
-import { PackList, useAsyncAction } from '@/features/packs';
+import { NewPackDialog, PackList, useNewPackFlow } from '@/features/packs';
 import { selectBundledPacks, selectMyPacks } from '@/store/createPacksStore';
 import { usePacksStore } from '@/store/packsStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -16,10 +17,16 @@ export default function HomeScreen() {
   const bundledPacks = usePacksStore(useShallow(selectBundledPacks));
   const quarantined = usePacksStore((s) => s.quarantined);
   const createPack = usePacksStore((s) => s.createPack);
-  const create = useAsyncAction(() => createPack({ name: 'My sticker pack', publisher: 'Me' }));
+  const lastPublisher = useSettingsStore((s) => s.lastPublisher);
+  const setSetting = useSettingsStore((s) => s.setSetting);
+  const newPack = useNewPackFlow({
+    createPack,
+    lastPublisher,
+    setLastPublisher: (publisher) => setSetting('lastPublisher', publisher),
+  });
 
-  async function onCreate() {
-    const pack = await create.run();
+  async function onCreate(values: { name: string; publisher: string }) {
+    const pack = await newPack.create(values);
     if (pack) router.push({ pathname: '/pack/[id]', params: { id: pack.id } });
   }
 
@@ -32,16 +39,16 @@ export default function HomeScreen() {
         quarantined={quarantined}
         onOpenPack={(id) => router.push({ pathname: '/pack/[id]', params: { id } })}
       />
-      <FAB
-        icon="plus"
-        label="New pack"
-        style={[styles.fab, { bottom: 24 + insets.bottom }]}
-        onPress={onCreate}
-        loading={create.pending}
-        disabled={create.pending}
+      <FAB icon="plus" label="New pack" style={[styles.fab, { bottom: 24 + insets.bottom }]} onPress={newPack.open} />
+      <NewPackDialog
+        visible={newPack.visible}
+        initialPublisher={newPack.initialPublisher}
+        pending={newPack.pending}
+        onCancel={newPack.close}
+        onCreate={onCreate}
       />
-      <Snackbar visible={!!create.error} onDismiss={create.clearError} duration={4000}>
-        {create.error ? `Could not create a pack: ${create.error}` : ''}
+      <Snackbar visible={!!newPack.error} onDismiss={newPack.clearError} duration={4000}>
+        {newPack.error ? `Could not create a pack: ${newPack.error}` : ''}
       </Snackbar>
     </Screen>
   );

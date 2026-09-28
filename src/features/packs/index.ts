@@ -1,6 +1,7 @@
 export { AddToWhatsAppButton } from './components/AddToWhatsAppButton';
 export { DuplicatePackBanner } from './components/DuplicatePackBanner';
 export { InstallErrorBanner } from './components/InstallErrorBanner';
+export { NewPackDialog } from './components/NewPackDialog';
 export { PackDetailsForm, type PackDetailsFormHandle } from './components/PackDetailsForm';
 export { PackList } from './components/PackList';
 export { StickerDetailsSheet } from './components/StickerDetailsSheet';
@@ -9,6 +10,7 @@ export { ValidationBar } from './components/ValidationBar';
 export { useAddToWhatsApp } from './hooks/useAddToWhatsApp';
 export { useAsyncAction } from './hooks/useAsyncAction';
 export { useBootstrap } from './hooks/useBootstrap';
+export { useNewPackFlow } from './hooks/useNewPackFlow';
 export { usePack } from './hooks/usePack';
 export { usePackValidation } from './hooks/usePackValidation';
 export { useWhatsAppStatus } from './hooks/useWhatsAppStatus';

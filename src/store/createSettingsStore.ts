@@ -12,6 +12,8 @@ export interface SettingsValues {
   contentRating: ContentRating;
   reduceMotion: boolean;
   bundledPacksVersion: number;
+  /** The author name last used to create a pack; pre-fills the "New pack" dialog. */
+  lastPublisher: string;
 }
 
 export interface SettingsState extends SettingsValues {
@@ -25,6 +27,7 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   contentRating: 'pg-13',
   reduceMotion: false,
   bundledPacksVersion: 0,
+  lastPublisher: '',
 };
 
 export function createSettingsStore(storage: StateStorage) {
