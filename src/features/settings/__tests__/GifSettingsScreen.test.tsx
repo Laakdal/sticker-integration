@@ -12,28 +12,24 @@ const settings = () => useSettingsStore.getState();
 const expectSelected = (name: string) =>
   expect(screen.getByRole('button', { name }).props.accessibilityState).toMatchObject({ checked: true });
 
-const ENV_KEYS = ['EXPO_PUBLIC_KLIPY_API_KEY', 'EXPO_PUBLIC_GIPHY_API_KEY'] as const;
-const savedEnv = Object.fromEntries(ENV_KEYS.map((k) => [k, process.env[k]]));
-
-beforeEach(() => {
-  useSettingsStore.setState(DEFAULT_SETTINGS);
-  process.env.EXPO_PUBLIC_KLIPY_API_KEY = 'from-env';
-  delete process.env.EXPO_PUBLIC_GIPHY_API_KEY;
-});
-
-afterAll(() => {
-  for (const k of ENV_KEYS) {
-    if (savedEnv[k] === undefined) delete process.env[k];
-    else process.env[k] = savedEnv[k];
-  }
-});
+beforeEach(() => useSettingsStore.setState(DEFAULT_SETTINGS));
 
 describe('GIF search & API settings', () => {
-  it('reads and writes the API keys, trimmed, with the .env status of each provider', async () => {
+  it('shows Klipy and Giphy as separate sections, each with its own key field, and no .env helper text', async () => {
     useSettingsStore.setState({ giphyApiKey: 'saved-giphy' });
     await renderWithProviders(<GifSettingsScreen />);
-    expect(screen.getByText('Empty: uses the key from .env (.env key found)')).toBeTruthy();
+
+    expect(screen.getByText('Klipy')).toBeTruthy();
+    expect(screen.getByText('Giphy')).toBeTruthy();
+    expect(screen.getByText('Content rating')).toBeTruthy();
+    expect(screen.getByLabelText('Klipy API key')).toBeTruthy();
     expect(screen.getByLabelText('Giphy API key').props.value).toBe('saved-giphy');
+    expect(screen.queryByText(/Empty: uses the key from \.env/)).toBeNull();
+  });
+
+  it('reads and writes the API keys, trimmed', async () => {
+    useSettingsStore.setState({ giphyApiKey: 'saved-giphy' });
+    await renderWithProviders(<GifSettingsScreen />);
 
     const klipy = screen.getByLabelText('Klipy API key');
     await fireEvent.changeText(klipy, ' my-klipy ');
@@ -44,7 +40,6 @@ describe('GIF search & API settings', () => {
     await fireEvent.changeText(giphy, '   ');
     await fireEvent(giphy, 'blur');
     expect(settings().giphyApiKey).toBe('');
-    expect(screen.getByText('Empty: uses the key from .env (no .env key)')).toBeTruthy();
   });
 
   it('reads and writes the content rating', async () => {

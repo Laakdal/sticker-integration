@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View } from 'react-native';
-import { HelperText, TextInput } from 'react-native-paper';
+import { TextInput } from 'react-native-paper';
 
 import { useTextDraft } from '../hooks/useTextDraft';
 
@@ -8,12 +8,10 @@ interface Props {
   label: string;
   /** The saved override; empty means the key from .env is used. */
   value: string;
-  /** Whether the build has a key for this provider in .env. */
-  envKeyFound: boolean;
   onSave: (key: string) => void;
 }
 
-export function ApiKeyField({ label, value, envKeyFound, onSave }: Props) {
+export function ApiKeyField({ label, value, onSave }: Props) {
   const { draft, change, focus, blur } = useTextDraft(value, onSave);
   const [visible, setVisible] = useState(false);
 
@@ -40,9 +38,6 @@ export function ApiKeyField({ label, value, envKeyFound, onSave }: Props) {
           />
         }
       />
-      {draft.length === 0 ? (
-        <HelperText type="info">{`Empty: uses the key from .env (${envKeyFound ? '.env key found' : 'no .env key'})`}</HelperText>
-      ) : null}
     </View>
   );
 }

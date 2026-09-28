@@ -45,11 +45,4 @@ describe('settingsSummaries', () => {
       );
     });
   });
-
-  describe('New packs', () => {
-    it('shows the default author, or that none is set', () => {
-      expect(settingsSummaries(values({ lastPublisher: 'Jane Doe' }), NO_ENV_KEYS)['new-packs']).toBe('Default author: Jane Doe');
-      expect(settingsSummaries(values(), NO_ENV_KEYS)['new-packs']).toBe('Default author: not set');
-    });
-  });
 });

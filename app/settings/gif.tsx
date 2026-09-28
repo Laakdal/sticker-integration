@@ -1,9 +1,9 @@
 import { StyleSheet, View } from 'react-native';
+import { List } from 'react-native-paper';
 import { useShallow } from 'zustand/react/shallow';
 
 import { Screen } from '@/components';
 import { ApiKeyField, ContentRatingPicker } from '@/features/settings';
-import { envGifApiKey } from '@/services/gif/envKeys';
 import { useSettingsStore } from '@/store/settingsStore';
 
 export default function GifSettingsScreen() {
@@ -18,23 +18,23 @@ export default function GifSettingsScreen() {
 
   return (
     <Screen scroll>
-      <View style={styles.group}>
-        <ApiKeyField
-          label="Klipy API key"
-          value={settings.klipyApiKey}
-          envKeyFound={envGifApiKey('klipy') !== ''}
-          onSave={(key) => setSetting('klipyApiKey', key)}
-        />
-        <ApiKeyField
-          label="Giphy API key"
-          value={settings.giphyApiKey}
-          envKeyFound={envGifApiKey('giphy') !== ''}
-          onSave={(key) => setSetting('giphyApiKey', key)}
-        />
-        <ContentRatingPicker value={settings.contentRating} onChange={(v) => setSetting('contentRating', v)} />
-      </View>
+      <List.Section title="Klipy">
+        <View style={styles.group}>
+          <ApiKeyField label="Klipy API key" value={settings.klipyApiKey} onSave={(key) => setSetting('klipyApiKey', key)} />
+        </View>
+      </List.Section>
+      <List.Section title="Giphy">
+        <View style={styles.group}>
+          <ApiKeyField label="Giphy API key" value={settings.giphyApiKey} onSave={(key) => setSetting('giphyApiKey', key)} />
+        </View>
+      </List.Section>
+      <List.Section title="Content rating">
+        <View style={styles.group}>
+          <ContentRatingPicker value={settings.contentRating} onChange={(v) => setSetting('contentRating', v)} />
+        </View>
+      </List.Section>
     </Screen>
   );
 }
 
-const styles = StyleSheet.create({ group: { padding: 16, gap: 12 } });
+const styles = StyleSheet.create({ group: { paddingHorizontal: 16 } });

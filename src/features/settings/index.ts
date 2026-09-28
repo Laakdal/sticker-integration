@@ -1,7 +1,6 @@
 export { AboutSection } from './components/AboutSection';
 export { ApiKeyField } from './components/ApiKeyField';
 export { ContentRatingPicker } from './components/ContentRatingPicker';
-export { DefaultAuthorField } from './components/DefaultAuthorField';
 export { DisplaySettings } from './components/DisplaySettings';
 export { SettingsCategoryList } from './components/SettingsCategoryList';
 export { useSettingsSummaries } from './hooks/useSettingsSummaries';

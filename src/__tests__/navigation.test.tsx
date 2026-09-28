@@ -34,7 +34,6 @@ const routes = {
   'pack/[id]': PackStub,
   'settings/gif': SettingsStub,
   'settings/display': SettingsStub,
-  'settings/new-packs': SettingsStub,
 };
 
 const MENU = 'Open navigation menu';

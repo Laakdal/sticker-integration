@@ -7,7 +7,6 @@ import * as SettingsScreen from '../../../../app/(drawer)/settings';
 import * as RootLayout from '../../../../app/_layout';
 import * as DisplaySettingsScreen from '../../../../app/settings/display';
 import * as GifSettingsScreen from '../../../../app/settings/gif';
-import * as NewPacksSettingsScreen from '../../../../app/settings/new-packs';
 import { DEFAULT_SETTINGS } from '@/store/createSettingsStore';
 import { useSettingsStore } from '@/store/settingsStore';
 
@@ -25,7 +24,6 @@ const routes = {
   '(drawer)/settings': SettingsScreen,
   'settings/gif': GifSettingsScreen,
   'settings/display': DisplaySettingsScreen,
-  'settings/new-packs': NewPacksSettingsScreen,
 };
 
 const ENV_KEYS = ['EXPO_PUBLIC_KLIPY_API_KEY', 'EXPO_PUBLIC_GIPHY_API_KEY'] as const;
@@ -60,8 +58,11 @@ describe('Settings screen', () => {
     expect(screen.getByText('Display')).toBeTruthy();
     // jest.setup.ts reports a device without wallpaper colours.
     expect(screen.getByText('Wallpaper colours unavailable · Reduce motion on')).toBeTruthy();
-    expect(screen.getByText('New packs')).toBeTruthy();
-    expect(screen.getByText('Default author: Jane')).toBeTruthy();
+  });
+
+  it('does not list or offer a "New packs" category', async () => {
+    await renderSettings();
+    expect(screen.queryByText('New packs')).toBeNull();
   });
 
   it('counts a key from .env in the GIF summary', async () => {
@@ -73,7 +74,6 @@ describe('Settings screen', () => {
   it.each([
     ['GIF search & API', '/settings/gif', 'Klipy API key'],
     ['Display', '/settings/display', 'Reduce motion'],
-    ['New packs', '/settings/new-packs', 'Default author'],
   ])('opens %s above the drawer with a back arrow', async (title, pathname, field) => {
     const app = await renderSettings();
     await fireEvent.press(screen.getByText(title));

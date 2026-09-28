@@ -104,7 +104,7 @@ src/features/
     hooks/       useExportPack, useImportPack
   settings/
     components/  SettingsCategoryList, AboutSection, ApiKeyField,
-                 ContentRatingPicker, DisplaySettings, DefaultAuthorField, StorageUsage
+                 ContentRatingPicker, DisplaySettings, StorageUsage
     hooks/       useSettingsSummaries (over the pure settingsSummaries), useTextDraft
 src/components/  Screen, SectionHeader, StickerImage (expo-image + reduce-motion),
                  EmptyState, ErrorState, ConfirmDialog, LoadingOverlay
@@ -334,10 +334,11 @@ See §9.
 
 ### Settings (`app/settings`)
 An M3 list of categories (a drawer screen). Each row has a leading icon, a title and a one-line summary of its current values (from the pure `settingsSummaries`), and opens a sub-screen pushed on the root Stack (header with back arrow, no drawer):
-- **GIF search & API** (`/settings/gif`) — Klipy API key and Giphy API key overrides (defaults from `.env`), content rating. Summary e.g. "Klipy: key set · Giphy: no key · PG-13" (a provider counts as "key set" when it has a saved key or an `.env` key).
+- **GIF search & API** (`/settings/gif`) — three `List.Section`s: **Klipy** and **Giphy**, each with that provider's API key override (default from `.env`), and **Content rating**. Summary e.g. "Klipy: key set · Giphy: no key · PG-13" (a provider counts as "key set" when it has a saved key or an `.env` key).
 - **Display** (`/settings/display`) — *Use wallpaper colours* (Material You; disabled with "Needs Android 12 or newer" on older devices), *Reduce motion*. Summary e.g. "Wallpaper colours on · Reduce motion off".
-- **New packs** (`/settings/new-packs`) — default author. Summary "Default author: <name>" or "Default author: not set".
 - **About** — app name and version; does not navigate.
+
+The author used to create a pack is not a Settings category: the "New pack" dialog (§8 Home) pre-fills its author field with `lastPublisher` (the author last used) and saves it there on Create.
 
 Planned: storage used + clear cache.
 

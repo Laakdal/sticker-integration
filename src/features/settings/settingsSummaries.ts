@@ -30,6 +30,5 @@ export function settingsSummaries(
   return {
     gif: gif.join(' · '),
     display: `Wallpaper colours ${wallpaper} · Reduce motion ${onOff(values.reduceMotion)}`,
-    'new-packs': `Default author: ${values.lastPublisher.trim() || 'not set'}`,
   };
 }
