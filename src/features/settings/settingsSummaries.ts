@@ -10,6 +10,8 @@ export interface EnvKeys {
 /** One line per settings category. */
 export type SettingsSummaries = Record<SettingsCategoryId, string>;
 
+const THEME_SUMMARY = { light: 'Light theme', dark: 'Dark theme', system: 'Auto theme' } as const;
+
 const onOff = (value: boolean) => (value ? 'on' : 'off');
 
 /** One-line summaries of each settings category's current values, for the Settings list. */
@@ -29,6 +31,6 @@ export function settingsSummaries(
 
   return {
     gif: gif.join(' · '),
-    display: `Wallpaper colours ${wallpaper} · Reduce motion ${onOff(values.reduceMotion)}`,
+    display: `${THEME_SUMMARY[values.themeMode]} · Wallpaper colours ${wallpaper} · Reduce motion ${onOff(values.reduceMotion)}`,
   };
 }
