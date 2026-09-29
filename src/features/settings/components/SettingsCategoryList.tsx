@@ -13,10 +13,9 @@ interface Props {
 export function SettingsCategoryList({ summaries, onOpen }: Props) {
   return (
     <>
-      <List.Section>
-        {SETTINGS_CATEGORIES.map(({ id, title, icon }) => (
+      {SETTINGS_CATEGORIES.map(({ id, section, title, icon }) => (
+        <List.Section key={id} title={section}>
           <List.Item
-            key={id}
             title={title}
             description={summaries[id]}
             descriptionNumberOfLines={1}
@@ -24,8 +23,8 @@ export function SettingsCategoryList({ summaries, onOpen }: Props) {
             left={(props) => <List.Icon {...props} icon={icon} />}
             onPress={() => onOpen(id)}
           />
-        ))}
-      </List.Section>
+        </List.Section>
+      ))}
       <List.Section title="About">
         <AboutSection />
       </List.Section>
