@@ -7,12 +7,14 @@ import { navigationThemeFor } from './navigationTheme';
 import { type ColorSchemeName, resolveAppTheme } from './theme';
 
 /**
- * The app theme: light/dark follows the system, colours come from the wallpaper (Android 12+,
+ * The app theme: light/dark follows Settings → Display → Theme (Auto = the system), colours come from the wallpaper (Android 12+,
  * Settings → Display) or from the app's own green. Returns the Paper theme and the matching
  * navigation theme so headers, the drawer and Paper components share one scheme.
  */
 export function useAppTheme() {
-  const colorScheme: ColorSchemeName = useColorScheme() === 'dark' ? 'dark' : 'light';
+  const systemScheme: ColorSchemeName = useColorScheme() === 'dark' ? 'dark' : 'light';
+  const themeMode = useSettingsStore((s) => s.themeMode);
+  const colorScheme: ColorSchemeName = themeMode === 'system' ? systemScheme : themeMode;
   const useDynamicColor = useSettingsStore((s) => s.useDynamicColor);
   const dynamicColorSupported = isDynamicColorSupported();
 
@@ -25,7 +27,7 @@ export function useAppTheme() {
   );
 
   return useMemo(() => {
-    const theme = resolveAppTheme({ colorScheme, useDynamicColor, systemTheme });
+    const theme = resolveAppTheme({ themeMode, systemScheme, useDynamicColor, systemTheme });
     return { theme, navigationTheme: navigationThemeFor(theme), colorScheme, dynamicColorSupported };
-  }, [colorScheme, useDynamicColor, systemTheme, dynamicColorSupported]);
+  }, [colorScheme, themeMode, systemScheme, useDynamicColor, systemTheme, dynamicColorSupported]);
 }
