@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import type { Pack, TrayFacts } from '@/domain/types';
 import { validatePack } from '@/services/validation';
@@ -35,7 +35,6 @@ export function usePackValidation(pack: Pack | undefined) {
   const loading = key !== null && tray?.key !== key;
   // While a changed tray reloads, keep the same pack's last facts so validation doesn't flicker to TRAY_MISSING.
   const trayFacts = pack && tray?.packId === pack.id ? tray.facts : null;
-  const validate = useCallback((p: Pack) => validatePack(p, trayFacts), [trayFacts]);
-  const issues = useMemo(() => (pack ? validate(pack) : []), [pack, validate]);
-  return { issues, loading, validate };
+  const issues = useMemo(() => (pack ? validatePack(pack, trayFacts) : []), [pack, trayFacts]);
+  return { issues, loading };
 }
