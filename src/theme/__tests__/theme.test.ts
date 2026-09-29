@@ -9,27 +9,27 @@ const wallpaper = createMaterial3Theme('#6750A4');
 
 describe('resolveAppTheme', () => {
   it('uses the wallpaper scheme when the setting is on and the device provides one', () => {
-    const light = resolveAppTheme({ colorScheme: 'light', useDynamicColor: true, systemTheme: wallpaper });
+    const light = resolveAppTheme({ themeMode: 'system', systemScheme: 'light', useDynamicColor: true, systemTheme: wallpaper });
     expect(light.dark).toBe(false);
     expect(light.colors.primary).toBe(wallpaper.light.primary);
     expect(light.colors.secondaryContainer).toBe(wallpaper.light.secondaryContainer);
 
-    const dark = resolveAppTheme({ colorScheme: 'dark', useDynamicColor: true, systemTheme: wallpaper });
+    const dark = resolveAppTheme({ themeMode: 'system', systemScheme: 'dark', useDynamicColor: true, systemTheme: wallpaper });
     expect(dark.dark).toBe(true);
     expect(dark.colors.primary).toBe(wallpaper.dark.primary);
     expect(dark.colors.surface).toBe(wallpaper.dark.surface);
   });
 
   it('uses the scheme generated from the brand colour when the setting is off', () => {
-    const theme = resolveAppTheme({ colorScheme: 'light', useDynamicColor: false, systemTheme: wallpaper });
+    const theme = resolveAppTheme({ themeMode: 'system', systemScheme: 'light', useDynamicColor: false, systemTheme: wallpaper });
     expect(theme.colors.primary).toBe(fallback.light.primary);
     expect(theme.colors.primary).not.toBe(wallpaper.light.primary);
   });
 
   it('falls back to the brand scheme when the device has no wallpaper colours', () => {
-    const light = resolveAppTheme({ colorScheme: 'light', useDynamicColor: true, systemTheme: null });
+    const light = resolveAppTheme({ themeMode: 'system', systemScheme: 'light', useDynamicColor: true, systemTheme: null });
     expect(light.colors.primary).toBe(fallback.light.primary);
-    const dark = resolveAppTheme({ colorScheme: 'dark', useDynamicColor: true, systemTheme: null });
+    const dark = resolveAppTheme({ themeMode: 'system', systemScheme: 'dark', useDynamicColor: true, systemTheme: null });
     expect(dark.dark).toBe(true);
     expect(dark.colors.primary).toBe(fallback.dark.primary);
   });
@@ -37,9 +37,9 @@ describe('resolveAppTheme', () => {
   it.each([
     ['light', MD3LightTheme],
     ['dark', MD3DarkTheme],
-  ] as const)('keeps every Paper MD3 token valid in %s mode', (colorScheme, base) => {
+  ] as const)('keeps every Paper MD3 token valid in %s mode', (systemScheme, base) => {
     for (const systemTheme of [wallpaper, null]) {
-      const theme = resolveAppTheme({ colorScheme, useDynamicColor: true, systemTheme });
+      const theme = resolveAppTheme({ themeMode: 'system', systemScheme, useDynamicColor: true, systemTheme });
       expect(theme.isV3).toBe(true);
       expect(theme.fonts).toBe(base.fonts);
       expect(theme.roundness).toBe(base.roundness);
@@ -62,9 +62,29 @@ describe('resolveAppTheme', () => {
   });
 });
 
+describe('resolveAppTheme themeMode', () => {
+  it.each(['light', 'dark'] as const)('forces the %s scheme whatever the system scheme is', (mode) => {
+    for (const systemScheme of ['light', 'dark'] as const) {
+      const plain = resolveAppTheme({ themeMode: mode, systemScheme, useDynamicColor: false, systemTheme: null });
+      expect(plain.dark).toBe(mode === 'dark');
+      expect(plain.colors.primary).toBe(fallback[mode].primary);
+      const dynamic = resolveAppTheme({ themeMode: mode, systemScheme, useDynamicColor: true, systemTheme: wallpaper });
+      expect(dynamic.dark).toBe(mode === 'dark');
+      expect(dynamic.colors.primary).toBe(wallpaper[mode].primary);
+    }
+  });
+
+  it('follows the system scheme for system', () => {
+    const light = resolveAppTheme({ themeMode: 'system', systemScheme: 'light', useDynamicColor: false, systemTheme: null });
+    const dark = resolveAppTheme({ themeMode: 'system', systemScheme: 'dark', useDynamicColor: false, systemTheme: null });
+    expect(light.dark).toBe(false);
+    expect(dark.dark).toBe(true);
+  });
+});
+
 describe('navigationThemeFor', () => {
   it('maps the Paper scheme onto the navigation theme', () => {
-    const theme = resolveAppTheme({ colorScheme: 'dark', useDynamicColor: true, systemTheme: wallpaper });
+    const theme = resolveAppTheme({ themeMode: 'system', systemScheme: 'dark', useDynamicColor: true, systemTheme: wallpaper });
     const nav = navigationThemeFor(theme);
     expect(nav.dark).toBe(true);
     expect(nav.colors).toEqual({
