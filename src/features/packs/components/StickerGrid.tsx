@@ -1,7 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import Sortable from 'react-native-sortables';
 
-import { EmptyState } from '@/components';
 import type { Pack, Sticker } from '@/domain/types';
 import { validateSticker } from '@/services/validation';
 import { packStorage } from '@/store/packsStore';
@@ -15,9 +14,6 @@ interface Props {
 }
 
 export function StickerGrid({ pack, onReorder, onOpenSticker }: Props) {
-  if (pack.stickers.length === 0) {
-    return <EmptyState icon="sticker-outline" title="No stickers yet" />;
-  }
   return (
     <View style={styles.root}>
       <Sortable.Grid<Sticker>
