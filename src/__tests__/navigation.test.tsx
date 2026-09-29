@@ -70,7 +70,7 @@ describe('navigation', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Settings' }));
     await act(async () => jest.runOnlyPendingTimers());
     expect(app.pathname()).toBe('/settings');
-    expect(screen.getByText('GIF search & API')).toBeTruthy();
+    expect(screen.getByText('API keys')).toBeTruthy();
 
     await fireEvent.press(screen.getByLabelText(MENU));
     expect(screen.getByRole('button', { name: 'Settings' })).toBeSelected();
@@ -80,7 +80,7 @@ describe('navigation', () => {
   it('opens /settings directly', async () => {
     const app = await renderApp('/settings');
     expect(app.pathname()).toBe('/settings');
-    expect(screen.getByText('GIF search & API')).toBeTruthy();
+    expect(screen.getByText('API keys')).toBeTruthy();
   });
 
   it('keeps /pack/[id] above the drawer, without the menu button, with the packs list behind it', async () => {
