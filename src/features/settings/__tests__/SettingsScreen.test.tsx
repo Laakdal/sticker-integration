@@ -57,7 +57,7 @@ describe('Settings screen', () => {
     expect(screen.getByText('Klipy: no key · Giphy: key set · G')).toBeTruthy();
     expect(screen.getByText('Display')).toBeTruthy();
     // jest.setup.ts reports a device without wallpaper colours.
-    expect(screen.getByText('Wallpaper colours unavailable · Reduce motion on')).toBeTruthy();
+    expect(screen.getByText('Auto theme · Wallpaper colours unavailable · Reduce motion on')).toBeTruthy();
   });
 
   it('does not list or offer a "New packs" category', async () => {
