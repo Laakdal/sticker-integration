@@ -1,8 +1,10 @@
-import { StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { View } from 'react-native';
 
 import type { ThemeMode } from '@/store/createSettingsStore';
-import { THEME_OPTIONS } from '../options';
-import { List, SegmentedButtons, Switch } from 'react-native-paper';
+import { List, Menu, Switch } from 'react-native-paper';
+
+import { optionLabel, THEME_OPTIONS } from '../options';
 
 interface Props {
   themeMode: ThemeMode;
@@ -24,13 +26,36 @@ export function DisplaySettings({
   reduceMotion,
   onChangeReduceMotion,
 }: Props) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <View>
-      <List.Section title="Theme">
-        <View style={styles.picker}>
-          <SegmentedButtons value={themeMode} onValueChange={(v) => onChangeThemeMode(v as ThemeMode)} buttons={THEME_OPTIONS} />
-        </View>
-      </List.Section>
+      <Menu
+        visible={menuOpen}
+        onDismiss={() => setMenuOpen(false)}
+        anchorPosition="bottom"
+        anchor={
+          <List.Item
+            title="Theme"
+            description={optionLabel(THEME_OPTIONS, themeMode)}
+            accessibilityRole="button"
+            onPress={() => setMenuOpen(true)}
+            right={(props) => <List.Icon {...props} icon="menu-down" />}
+          />
+        }
+      >
+        {THEME_OPTIONS.map(({ value, label }) => (
+          <Menu.Item
+            key={value}
+            title={label}
+            trailingIcon={value === themeMode ? 'check' : undefined}
+            onPress={() => {
+              onChangeThemeMode(value);
+              setMenuOpen(false);
+            }}
+          />
+        ))}
+      </Menu>
       <List.Item
         title="Use wallpaper colours"
         description={dynamicColorSupported ? 'Android 12 or newer' : 'Needs Android 12 or newer'}
@@ -54,5 +79,3 @@ export function DisplaySettings({
     </View>
   );
 }
-
-const styles = StyleSheet.create({ picker: { paddingHorizontal: 16 } });
