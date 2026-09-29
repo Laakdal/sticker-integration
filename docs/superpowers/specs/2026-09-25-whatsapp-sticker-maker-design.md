@@ -74,9 +74,11 @@ Quality rationale: both routes end in libwebp, so quality is decided by (a) sour
 ```
 src/features/
   packs/
-    components/  PackList, PackCard, PackDetailsForm, TrayIconPicker, StickerGrid,
-                 StickerTile, StickerDetailsSheet, AddStickerMenu,
-                 AddToWhatsAppButton (extended FAB + issues dialog), WhatsAppBadge
+    components/  PackList, PackCard, PackDetailsDialog (New pack / Rename pack), TrayIconPicker,
+                 StickerGrid, StickerTile, StickerDetailsSheet, AddStickerMenu,
+                 PackOverflowMenu (header ⋮: Rename pack / Delete pack),
+                 PackSpeedDial ("+" FAB.Group: Add sticker, Add/Update in WhatsApp + issues dialog),
+                 WhatsAppBadge
     hooks/       usePack, usePackValidation, useWhatsAppStatus, useAddToWhatsApp
   editor/
     shared/      EmojiTagger, EncodedResultPreview, EncodeProgressDialog, FitFillToggle
@@ -306,12 +308,17 @@ Error codes: `DECODE_FAILED`, `OUT_OF_MEMORY`, `TOO_LARGE`, `CANCELLED`, `IO_ERR
 A single "My packs" section, with an empty state ("No packs yet") when there are none. Card: tray icon, name, author, sticker count, "Added to WhatsApp ✓" badge (from `getWhatsAppStatus`). FAB → new pack. Overflow → Import/Export, Settings.
 
 ### Create/Edit Pack (`app/pack/[id]`)
-- Name, author, tray icon (auto from first sticker; changeable).
+- Header: back arrow on the left, the pack name as the title, and a ⋮ "More options" button on the right that opens a menu:
+  - *Rename pack* → dialog with "Pack name" and "Author" pre-filled with the current values (max 128 characters each, with counters). Save stays disabled while either trimmed field is empty or nothing changed; Save stores the trimmed values, Cancel changes nothing.
+  - *Delete pack* → always asks first ("Delete this pack?"; WhatsApp keeps any copy it already has). Only the confirm button deletes the pack and goes back; Cancel or dismissing keeps it.
+- Name and author are edited only through *Rename pack* (no inline form). Tray icon: auto from first sticker; changeable.
 - Sticker grid with long-press drag-reorder. Tap → bottom sheet: emojis, accessibility text, re-edit (if `editable`), delete.
 - Add menu: *Device* (in-app gallery), *Search GIFs*, *System picker*.
-- Pack details (name/author form, tray) and the full sticker grid scroll together; the scroll content has bottom padding so the FAB never covers the last row of stickers.
+- The tray row and the full sticker grid scroll together; the scroll content has bottom padding so the FAB never covers the last row of stickers.
 - Adding a sticker of the other kind follows the *Pack type* setting (§5.3).
-- Extended FAB at the bottom right, above the safe-area inset: "Add to WhatsApp" when no installed WhatsApp has the pack, "Update in WhatsApp" when one does (re-sends it with `force: true`); WhatsApp icon; loading and disabled while a request is pending. It stays enabled when the pack has validation issues: tapping it then opens a "Not ready for WhatsApp yet" dialog listing the issue messages with an OK button, and nothing is sent to WhatsApp. After a successful add/update the WhatsApp status is refreshed.
+- "+" speed dial (FAB.Group) at the bottom right, above the safe-area inset; its icon becomes a close icon while open and its backdrop follows the theme. Labelled actions:
+  - *Add sticker* → the Add menu above (until sticker creation lands it shows a "Sticker creation is coming in the next update" snackbar).
+  - *Add to WhatsApp* when no installed WhatsApp has the pack, *Update in WhatsApp* when one does (re-sends it with `force: true`); WhatsApp icon; presses are ignored while a request is pending. When the pack has validation issues it opens a "Not ready for WhatsApp yet" dialog listing the issue messages with an OK button, and nothing is sent to WhatsApp. After a successful add/update the WhatsApp status is refreshed.
 - Every pack is editable (there are no read-only packs).
 
 ### Media sources (`app/media`) — tabs
