@@ -19,20 +19,28 @@ async function renderDial(props: Partial<Props> = {}) {
   return { onAdd, onAddSticker, all, rendered };
 }
 
+/**
+ * FAB.Group animates opening and closing and sets state when the closing animation ends. Fake timers
+ * keep those frames from firing on their own (outside act) on a slow machine; this runs them inside act().
+ */
+async function settleAnimations() {
+  await act(async () => jest.advanceTimersByTime(300));
+}
+
 async function openDial() {
   await fireEvent.press(screen.getByLabelText('Pack actions'));
-  // The actions become accessible once the group reports itself open.
-  await waitFor(() => expect(screen.getByLabelText('Pack actions')).toBeExpanded());
-  // Let the actions' fade-in finish inside act() so its trailing frames don't update state outside it.
-  await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 300));
-  });
+  await settleAnimations();
+  expect(screen.getByLabelText('Pack actions')).toBeExpanded();
 }
 
 /** FAB.Group hides its action labels from accessibility (the row itself carries the label), so press the label text directly. */
 async function pressAction(label: string) {
   await fireEvent.press(screen.getByText(label, { includeHiddenElements: true }));
+  await settleAnimations();
 }
+
+beforeEach(() => jest.useFakeTimers());
+afterEach(() => jest.useRealTimers());
 
 describe('PackSpeedDial', () => {
   it('shows both actions once opened', async () => {
