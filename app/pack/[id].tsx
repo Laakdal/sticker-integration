@@ -1,10 +1,10 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Snackbar, Text } from 'react-native-paper';
+import { Snackbar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ConfirmDialog, EmptyState, Screen, StickerImage } from '@/components';
+import { ConfirmDialog, EmptyState, Screen } from '@/components';
 import {
   isAddedAnywhere,
   PackDetailsDialog,
@@ -17,7 +17,7 @@ import {
   usePackValidation,
   useWhatsAppStatus,
 } from '@/features/packs';
-import { packStorage, usePacksStore } from '@/store/packsStore';
+import { usePacksStore } from '@/store/packsStore';
 
 /** Room under the last row of stickers for the "+" FAB (56 dp tall, 16 dp above the bottom) plus a gap. */
 const FAB_CLEARANCE = 96;
@@ -60,21 +60,23 @@ export default function PackScreen() {
           headerRight: () => <PackOverflowMenu onRename={() => setRenaming(true)} onDelete={() => setConfirmDelete(true)} />,
         }}
       />
-      <Screen scroll contentStyle={{ paddingBottom: FAB_CLEARANCE + insets.bottom }}>
-        <View style={styles.section}>
-          <View style={styles.trayRow}>
-            <StickerImage uri={packStorage.fileUri(pack.id, pack.trayIcon)} size={64} version={pack.imageDataVersion} animate={false} accessibilityLabel="Tray icon" />
-            <Text variant="bodySmall" style={styles.trayHint}>
-              {added ? 'Added to WhatsApp' : 'Tray icon shown in the WhatsApp sticker tray'}
-            </Text>
+      {pack.stickers.length === 0 ? (
+        <Screen>
+          <View style={[styles.empty, { paddingBottom: FAB_CLEARANCE + insets.bottom }]}>
+            <EmptyState icon="sticker-outline" title="No stickers yet" />
           </View>
-          <StickerGrid
-            pack={pack}
-            onReorder={(ids) => run(actions.reorderStickers(pack.id, ids))}
-            onOpenSticker={setOpenStickerId}
-          />
-        </View>
-      </Screen>
+        </Screen>
+      ) : (
+        <Screen scroll contentStyle={{ paddingBottom: FAB_CLEARANCE + insets.bottom }}>
+          <View style={styles.section}>
+            <StickerGrid
+              pack={pack}
+              onReorder={(ids) => run(actions.reorderStickers(pack.id, ids))}
+              onOpenSticker={setOpenStickerId}
+            />
+          </View>
+        </Screen>
+      )}
       <PackSpeedDial
         added={added}
         issues={issues}
@@ -136,6 +138,5 @@ export default function PackScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   section: { padding: 16, gap: 12 },
-  trayRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  trayHint: { flex: 1, opacity: 0.7 },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });
