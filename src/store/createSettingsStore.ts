@@ -4,12 +4,16 @@ import { createJSONStorage, persist, type StateStorage } from 'zustand/middlewar
 export type GifProviderId = 'klipy' | 'giphy';
 export type ContentRating = 'g' | 'pg' | 'pg-13' | 'r';
 
+export type ThemeMode = 'light' | 'dark' | 'system';
+
 export interface SettingsValues {
   /** Empty string means "use the .env default". */
   klipyApiKey: string;
   giphyApiKey: string;
   contentRating: ContentRating;
   reduceMotion: boolean;
+  /** Settings → Display → Theme: a fixed light or dark scheme, or follow the system. */
+  themeMode: ThemeMode;
   /** Use the Android 12+ wallpaper colour scheme (Material You) where the device provides one. */
   useDynamicColor: boolean;
   /** The author name last used to create a pack; pre-fills the "New pack" dialog. */
@@ -26,6 +30,7 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   contentRating: 'pg-13',
   reduceMotion: false,
   useDynamicColor: true,
+  themeMode: 'system',
   lastPublisher: '',
 };
 
