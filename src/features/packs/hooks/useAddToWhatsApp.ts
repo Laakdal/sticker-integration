@@ -23,7 +23,8 @@ export function useAddToWhatsApp(pack: Pack | undefined, issues: ValidationIssue
   const inFlight = useRef(false);
   const { flush, readLatest, validate } = options;
 
-  const add = useCallback(async () => {
+  /** `force` re-sends the pack even when every installed WhatsApp already has it (Update). */
+  const add = useCallback(async ({ force = false }: { force?: boolean } = {}) => {
     if (!pack || inFlight.current) return;
     if (!flush && issues.length > 0) {
       setMessage(issuesMessage(issues.length));
@@ -46,7 +47,7 @@ export function useAddToWhatsApp(pack: Pack | undefined, issues: ValidationIssue
         setMessage(issuesMessage(targetIssues.length));
         return;
       }
-      setMessage(describeAddResult(await addToWhatsApp(target.id, target.name)));
+      setMessage(describeAddResult(await addToWhatsApp(target.id, target.name, { force }), force));
     } catch (e) {
       const code = (e as { code?: string }).code;
       setMessage(code === 'BUSY' ? 'WhatsApp is already open for another pack.' : `Could not open WhatsApp: ${(e as Error).message}`);
