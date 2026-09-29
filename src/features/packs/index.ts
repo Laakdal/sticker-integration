@@ -4,7 +4,6 @@ export { PackDetailsForm, type PackDetailsFormHandle } from './components/PackDe
 export { PackList } from './components/PackList';
 export { StickerDetailsSheet } from './components/StickerDetailsSheet';
 export { StickerGrid } from './components/StickerGrid';
-export { ValidationBar } from './components/ValidationBar';
 export { useAddToWhatsApp } from './hooks/useAddToWhatsApp';
 export { useAsyncAction } from './hooks/useAsyncAction';
 export { useBootstrap } from './hooks/useBootstrap';
