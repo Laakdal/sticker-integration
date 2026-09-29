@@ -1,7 +1,10 @@
 export { AddToWhatsAppButton } from './components/AddToWhatsAppButton';
 export { NewPackDialog } from './components/NewPackDialog';
 export { PackDetailsForm, type PackDetailsFormHandle } from './components/PackDetailsForm';
+export { PackDetailsDialog } from './components/PackDetailsDialog';
 export { PackList } from './components/PackList';
+export { PackOverflowMenu } from './components/PackOverflowMenu';
+export { PackSpeedDial } from './components/PackSpeedDial';
 export { StickerDetailsSheet } from './components/StickerDetailsSheet';
 export { StickerGrid } from './components/StickerGrid';
 export { useAddToWhatsApp } from './hooks/useAddToWhatsApp';
