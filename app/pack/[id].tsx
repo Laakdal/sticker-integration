@@ -1,15 +1,15 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Appbar, Snackbar, Text } from 'react-native-paper';
+import { Snackbar, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ConfirmDialog, EmptyState, Screen, StickerImage } from '@/components';
 import {
-  AddToWhatsAppButton,
   isAddedAnywhere,
-  PackDetailsForm,
-  type PackDetailsFormHandle,
+  PackDetailsDialog,
+  PackOverflowMenu,
+  PackSpeedDial,
   StickerDetailsSheet,
   StickerGrid,
   useAddToWhatsApp,
@@ -19,7 +19,7 @@ import {
 } from '@/features/packs';
 import { packStorage, usePacksStore } from '@/store/packsStore';
 
-/** Room under the last row of stickers for the FAB (56 dp tall, 24 dp above the bottom) plus a gap. */
+/** Room under the last row of stickers for the "+" FAB (56 dp tall, 16 dp above the bottom) plus a gap. */
 const FAB_CLEARANCE = 96;
 
 export default function PackScreen() {
@@ -27,18 +27,14 @@ export default function PackScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const pack = usePack(id);
-  const { issues, validate } = usePackValidation(pack);
-  const detailsRef = useRef<PackDetailsFormHandle>(null);
-  const whatsapp = useAddToWhatsApp(pack, issues, {
-    flush: () => detailsRef.current?.flush() ?? Promise.resolve(),
-    readLatest: () => usePacksStore.getState().packs[id],
-    validate,
-  });
+  const { issues } = usePackValidation(pack);
+  const whatsapp = useAddToWhatsApp(pack, issues);
   const { status, refresh: refreshStatus } = useWhatsAppStatus(id, pack?.imageDataVersion ?? 0);
   const actions = usePacksStore.getState();
   const [openStickerId, setOpenStickerId] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   if (!pack) {
     return (
@@ -50,16 +46,18 @@ export default function PackScreen() {
   }
 
   const openSticker = pack.stickers.find((s) => s.id === openStickerId) ?? null;
-  const run = (task: Promise<unknown>) => task.catch((e: Error) => setError(e.message));
-  const snackbar = whatsapp.message ?? error;
+  const run = (task: Promise<unknown>) => task.catch((e: Error) => setNotice(e.message));
+  const snackbar = whatsapp.message ?? notice;
   const added = isAddedAnywhere(status);
+  // Placeholder until sticker creation lands; the next plan replaces this handler.
+  const onAddSticker = () => setNotice('Sticker creation is coming in the next update');
 
   return (
     <View style={styles.root}>
       <Stack.Screen
         options={{
           title: pack.name,
-          headerRight: () => <Appbar.Action icon="delete-outline" accessibilityLabel="Delete pack" onPress={() => setConfirmDelete(true)} />,
+          headerRight: () => <PackOverflowMenu onRename={() => setRenaming(true)} onDelete={() => setConfirmDelete(true)} />,
         }}
       />
       <Screen scroll contentStyle={{ paddingBottom: FAB_CLEARANCE + insets.bottom }}>
@@ -70,7 +68,6 @@ export default function PackScreen() {
               {added ? 'Added to WhatsApp' : 'Tray icon shown in the WhatsApp sticker tray'}
             </Text>
           </View>
-          <PackDetailsForm ref={detailsRef} pack={pack} onSave={(patch) => run(actions.updateDetails(pack.id, patch))} />
           <StickerGrid
             pack={pack}
             onReorder={(ids) => run(actions.reorderStickers(pack.id, ids))}
@@ -78,12 +75,12 @@ export default function PackScreen() {
           />
         </View>
       </Screen>
-      <AddToWhatsAppButton
+      <PackSpeedDial
         added={added}
         issues={issues}
         pending={whatsapp.pending}
+        onAddSticker={onAddSticker}
         onAdd={({ force }) => whatsapp.add({ force }).then(() => refreshStatus())}
-        style={[styles.fab, { bottom: 24 + insets.bottom }]}
       />
       <StickerDetailsSheet
         pack={pack}
@@ -96,6 +93,18 @@ export default function PackScreen() {
         onDelete={() => {
           if (openSticker) run(actions.removeSticker(pack.id, openSticker.id));
           setOpenStickerId(null);
+        }}
+      />
+      <PackDetailsDialog
+        visible={renaming}
+        title="Rename pack"
+        confirmLabel="Save"
+        initialName={pack.name}
+        initialPublisher={pack.publisher}
+        onCancel={() => setRenaming(false)}
+        onConfirm={(values) => {
+          setRenaming(false);
+          run(actions.updateDetails(pack.id, values));
         }}
       />
       <ConfirmDialog
@@ -114,7 +123,7 @@ export default function PackScreen() {
         visible={!!snackbar}
         onDismiss={() => {
           whatsapp.clearMessage();
-          setError(null);
+          setNotice(null);
         }}
         duration={4000}
       >
@@ -129,5 +138,4 @@ const styles = StyleSheet.create({
   section: { padding: 16, gap: 12 },
   trayRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   trayHint: { flex: 1, opacity: 0.7 },
-  fab: { position: 'absolute', right: 16 },
 });
