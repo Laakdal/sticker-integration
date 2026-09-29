@@ -5,12 +5,13 @@ export function isAddedAnywhere(status: WhatsAppStatus | null): boolean {
   return (status.consumer.installed && status.consumer.added) || (status.business.installed && status.business.added);
 }
 
-export function describeAddResult(result: AddResult): string {
+/** `update` words the outcome of re-sending a pack WhatsApp already has. */
+export function describeAddResult(result: AddResult, update = false): string {
   switch (result.status) {
     case 'added':
-      return 'Sticker pack added to WhatsApp.';
+      return update ? 'Sticker pack updated in WhatsApp.' : 'Sticker pack added to WhatsApp.';
     case 'cancelled':
-      return 'Sticker pack was not added.';
+      return update ? 'Sticker pack was not updated.' : 'Sticker pack was not added.';
     case 'error':
       if (result.reason === 'not_installed') return result.message ?? 'WhatsApp is not installed.';
       if (result.reason === 'launch_failed') return result.message ?? 'WhatsApp could not be opened.';
