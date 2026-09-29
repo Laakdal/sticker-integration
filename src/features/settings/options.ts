@@ -10,15 +10,15 @@ export const RATING_OPTIONS: { value: ContentRating; label: string }[] = [
 export const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
-  { value: 'system', label: 'Auto' },
+  { value: 'system', label: 'Auto (same as system)' },
 ];
 
 export type SettingsCategoryId = 'gif' | 'display';
 
 /** The settings sub-screens: `/settings/<id>`, pushed on the root Stack above the drawer. */
-export const SETTINGS_CATEGORIES: { id: SettingsCategoryId; title: string; icon: string }[] = [
-  { id: 'gif', title: 'GIF search & API', icon: 'file-gif-box' },
-  { id: 'display', title: 'Display', icon: 'palette-outline' },
+export const SETTINGS_CATEGORIES: { id: SettingsCategoryId; section: string; title: string; icon: string }[] = [
+  { id: 'gif', section: 'API', title: 'API keys', icon: 'file-gif-box' },
+  { id: 'display', section: 'Display', title: 'Appearance', icon: 'palette-outline' },
 ];
 
 export function optionLabel<T extends string>(options: { value: T; label: string }[], value: T): string {
