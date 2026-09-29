@@ -1,10 +1,16 @@
-import type { ContentRating } from '@/store/createSettingsStore';
+import type { ContentRating, ThemeMode } from '@/store/createSettingsStore';
 
 export const RATING_OPTIONS: { value: ContentRating; label: string }[] = [
   { value: 'g', label: 'G' },
   { value: 'pg', label: 'PG' },
   { value: 'pg-13', label: 'PG-13' },
   { value: 'r', label: 'R' },
+];
+
+export const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+  { value: 'system', label: 'Auto' },
 ];
 
 export type SettingsCategoryId = 'gif' | 'display';
