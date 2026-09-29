@@ -33,15 +33,22 @@ describe('settingsSummaries', () => {
 
   describe('Display', () => {
     it('reports both switches', () => {
-      expect(settingsSummaries(values(), NO_ENV_KEYS).display).toBe('Wallpaper colours on · Reduce motion off');
+      expect(settingsSummaries(values(), NO_ENV_KEYS).display).toBe('Auto theme · Wallpaper colours on · Reduce motion off');
       expect(settingsSummaries(values({ useDynamicColor: false, reduceMotion: true }), NO_ENV_KEYS).display).toBe(
-        'Wallpaper colours off · Reduce motion on',
+        'Auto theme · Wallpaper colours off · Reduce motion on',
       );
+    });
+
+    it('names the chosen theme', () => {
+      expect(settingsSummaries(values({ themeMode: 'light' }), NO_ENV_KEYS).display).toBe(
+        'Light theme · Wallpaper colours on · Reduce motion off',
+      );
+      expect(settingsSummaries(values({ themeMode: 'dark' }), NO_ENV_KEYS).display).toMatch(/^Dark theme · /);
     });
 
     it('says wallpaper colours are unavailable before Android 12', () => {
       expect(settingsSummaries(values(), NO_ENV_KEYS, { dynamicColorSupported: false }).display).toBe(
-        'Wallpaper colours unavailable · Reduce motion off',
+        'Auto theme · Wallpaper colours unavailable · Reduce motion off',
       );
     });
   });
