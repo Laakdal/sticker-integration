@@ -333,9 +333,9 @@ Output is always a 512×512 canvas, and the source aspect ratio is **always pres
 See §9.
 
 ### Settings (`app/settings`)
-An M3 list of categories (a drawer screen). Each row has a leading icon, a title and a one-line summary of its current values (from the pure `settingsSummaries`), and opens a sub-screen pushed on the root Stack (header with back arrow, no drawer):
-- **GIF search & API** (`/settings/gif`) — three `List.Section`s: **Klipy** and **Giphy**, each with that provider's API key override (default from `.env`), and **Content rating**. Summary e.g. "Klipy: key set · Giphy: no key · PG-13" (a provider counts as "key set" when it has a saved key or an `.env` key).
-- **Display** (`/settings/display`) — *Theme* (Light / Dark / Auto = follow the system; persisted as `themeMode`, default Auto; applies to the Paper and navigation themes, drawer, headers and status bar), *Use wallpaper colours* (Material You; disabled with "Needs Android 12 or newer" on older devices), *Reduce motion*. Summary e.g. "Auto theme · Wallpaper colours on · Reduce motion off".
+An M3 list (a drawer screen) with three `List.Section`s — **API**, **Display**, **About** — each holding one row with a leading icon, a title and a one-line summary of its current values (from the pure `settingsSummaries`); the API and Display rows open a sub-screen pushed on the root Stack (header with back arrow, no drawer):
+- **API keys** (`/settings/gif`) — three `List.Section`s: **Klipy** and **Giphy**, each with that provider's API key override (default from `.env`), and **Content rating**. Summary e.g. "Klipy: key set · Giphy: no key · PG-13" (a provider counts as "key set" when it has a saved key or an `.env` key).
+- **Appearance** (`/settings/display`) — *Theme* (a dropdown `List.Item` + `Menu`: Light / Dark / Auto (same as system); persisted as `themeMode`, default Auto; applies to the Paper and navigation themes, drawer, headers and status bar), *Use wallpaper colours* (Material You; disabled with "Needs Android 12 or newer" on older devices), *Reduce motion*. Summary e.g. "Auto theme · Wallpaper colours on · Reduce motion off".
 - **About** — app name and version; does not navigate.
 
 The author used to create a pack is not a Settings category: the "New pack" dialog (§8 Home) pre-fills its author field with `lastPublisher` (the author last used) and saves it there on Create.
