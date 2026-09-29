@@ -7,6 +7,7 @@ import * as SettingsScreen from '../../../../app/(drawer)/settings';
 import * as RootLayout from '../../../../app/_layout';
 import * as DisplaySettingsScreen from '../../../../app/settings/display';
 import * as GifSettingsScreen from '../../../../app/settings/gif';
+import { SETTINGS_CATEGORIES } from '@/features/settings';
 import { DEFAULT_SETTINGS } from '@/store/createSettingsStore';
 import { useSettingsStore } from '@/store/settingsStore';
 
@@ -53,11 +54,23 @@ describe('Settings screen', () => {
   it('lists the categories with a summary of their current values', async () => {
     useSettingsStore.setState({ contentRating: 'g', giphyApiKey: 'saved', reduceMotion: true, lastPublisher: 'Jane' });
     await renderSettings();
-    expect(screen.getByText('GIF search & API')).toBeTruthy();
+    expect(screen.getByText('API keys')).toBeTruthy();
     expect(screen.getByText('Klipy: no key · Giphy: key set · G')).toBeTruthy();
-    expect(screen.getByText('Display')).toBeTruthy();
+    expect(screen.getByText('Appearance')).toBeTruthy();
     // jest.setup.ts reports a device without wallpaper colours.
     expect(screen.getByText('Auto theme · Wallpaper colours unavailable · Reduce motion on')).toBeTruthy();
+  });
+
+  it('groups the rows under API, Display and About headers', async () => {
+    await renderSettings();
+    for (const header of ['API', 'Display', 'About']) expect(screen.getByText(header)).toBeTruthy();
+  });
+
+  it('titles the sub-screen headers API keys and Appearance', () => {
+    expect(SETTINGS_CATEGORIES.map((c) => [c.id, c.title])).toEqual([
+      ['gif', 'API keys'],
+      ['display', 'Appearance'],
+    ]);
   });
 
   it('does not list or offer a "New packs" category', async () => {
@@ -72,8 +85,8 @@ describe('Settings screen', () => {
   });
 
   it.each([
-    ['GIF search & API', '/settings/gif', 'Klipy API key'],
-    ['Display', '/settings/display', 'Reduce motion'],
+    ['API keys', '/settings/gif', 'Klipy API key'],
+    ['Appearance', '/settings/display', 'Reduce motion'],
   ])('opens %s above the drawer with a back arrow', async (title, pathname, field) => {
     const app = await renderSettings();
     await fireEvent.press(screen.getByText(title));
