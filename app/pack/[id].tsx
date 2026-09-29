@@ -1,7 +1,7 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Appbar, Snackbar, Text, useTheme } from 'react-native-paper';
+import { Appbar, Snackbar, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ConfirmDialog, EmptyState, Screen, StickerImage } from '@/components';
@@ -16,14 +16,15 @@ import {
   usePack,
   usePackValidation,
   useWhatsAppStatus,
-  ValidationBar,
 } from '@/features/packs';
 import { packStorage, usePacksStore } from '@/store/packsStore';
+
+/** Room under the last row of stickers for the FAB (56 dp tall, 24 dp above the bottom) plus a gap. */
+const FAB_CLEARANCE = 96;
 
 export default function PackScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const pack = usePack(id);
   const { issues, validate } = usePackValidation(pack);
@@ -51,6 +52,7 @@ export default function PackScreen() {
   const openSticker = pack.stickers.find((s) => s.id === openStickerId) ?? null;
   const run = (task: Promise<unknown>) => task.catch((e: Error) => setError(e.message));
   const snackbar = whatsapp.message ?? error;
+  const added = isAddedAnywhere(status);
 
   return (
     <View style={styles.root}>
@@ -60,12 +62,12 @@ export default function PackScreen() {
           headerRight: () => <Appbar.Action icon="delete-outline" accessibilityLabel="Delete pack" onPress={() => setConfirmDelete(true)} />,
         }}
       />
-      <Screen scroll>
+      <Screen scroll contentStyle={{ paddingBottom: FAB_CLEARANCE + insets.bottom }}>
         <View style={styles.section}>
           <View style={styles.trayRow}>
             <StickerImage uri={packStorage.fileUri(pack.id, pack.trayIcon)} size={64} version={pack.imageDataVersion} animate={false} accessibilityLabel="Tray icon" />
             <Text variant="bodySmall" style={styles.trayHint}>
-              {isAddedAnywhere(status) ? 'Added to WhatsApp' : 'Tray icon shown in the WhatsApp sticker tray'}
+              {added ? 'Added to WhatsApp' : 'Tray icon shown in the WhatsApp sticker tray'}
             </Text>
           </View>
           <PackDetailsForm ref={detailsRef} pack={pack} onSave={(patch) => run(actions.updateDetails(pack.id, patch))} />
@@ -76,10 +78,13 @@ export default function PackScreen() {
           />
         </View>
       </Screen>
-      <View style={[styles.footer, { backgroundColor: colors.elevation.level2, paddingBottom: 16 + insets.bottom }]}>
-        <ValidationBar count={pack.stickers.length} issues={issues} />
-        <AddToWhatsAppButton disabled={issues.length > 0} pending={whatsapp.pending} onPress={() => whatsapp.add().then(() => refreshStatus())} />
-      </View>
+      <AddToWhatsAppButton
+        added={added}
+        issues={issues}
+        pending={whatsapp.pending}
+        onAdd={({ force }) => whatsapp.add({ force }).then(() => refreshStatus())}
+        style={[styles.fab, { bottom: 24 + insets.bottom }]}
+      />
       <StickerDetailsSheet
         pack={pack}
         sticker={openSticker}
@@ -124,5 +129,5 @@ const styles = StyleSheet.create({
   section: { padding: 16, gap: 12 },
   trayRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   trayHint: { flex: 1, opacity: 0.7 },
-  footer: { padding: 16, gap: 8 },
+  fab: { position: 'absolute', right: 16 },
 });
