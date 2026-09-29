@@ -1,5 +1,5 @@
 import { StyleSheet, View } from 'react-native';
-import { Card, Chip, Text } from 'react-native-paper';
+import { Card, Text } from 'react-native-paper';
 
 import { StickerImage } from '@/components';
 import type { Pack } from '@/domain/types';
@@ -34,7 +34,6 @@ export function PackCard({ pack, onPress }: { pack: Pack; onPress: () => void })
           ))}
         </View>
         <View style={styles.chips}>
-          <Chip compact>{pack.animated ? 'Animated' : 'Static'}</Chip>
           <WhatsAppBadge added={isAddedAnywhere(status)} />
         </View>
       </Card.Content>
