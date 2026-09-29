@@ -1,7 +1,12 @@
-import { View } from 'react-native';
-import { List, Switch } from 'react-native-paper';
+import { StyleSheet, View } from 'react-native';
+
+import type { ThemeMode } from '@/store/createSettingsStore';
+import { THEME_OPTIONS } from '../options';
+import { List, SegmentedButtons, Switch } from 'react-native-paper';
 
 interface Props {
+  themeMode: ThemeMode;
+  onChangeThemeMode: (themeMode: ThemeMode) => void;
   useDynamicColor: boolean;
   /** Whether the device provides wallpaper colours (Android 12 or newer). */
   dynamicColorSupported: boolean;
@@ -11,6 +16,8 @@ interface Props {
 }
 
 export function DisplaySettings({
+  themeMode,
+  onChangeThemeMode,
   useDynamicColor,
   dynamicColorSupported,
   onChangeUseDynamicColor,
@@ -19,6 +26,11 @@ export function DisplaySettings({
 }: Props) {
   return (
     <View>
+      <List.Section title="Theme">
+        <View style={styles.picker}>
+          <SegmentedButtons value={themeMode} onValueChange={(v) => onChangeThemeMode(v as ThemeMode)} buttons={THEME_OPTIONS} />
+        </View>
+      </List.Section>
       <List.Item
         title="Use wallpaper colours"
         description={dynamicColorSupported ? 'Android 12 or newer' : 'Needs Android 12 or newer'}
@@ -42,3 +54,5 @@ export function DisplaySettings({
     </View>
   );
 }
+
+const styles = StyleSheet.create({ picker: { paddingHorizontal: 16 } });
