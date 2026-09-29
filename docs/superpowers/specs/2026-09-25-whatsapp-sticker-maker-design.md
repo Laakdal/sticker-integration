@@ -311,15 +311,16 @@ A single "My packs" section, with an empty state ("No packs yet") when there are
 - Header: back arrow on the left, the pack name as the title, and a ⋮ "More options" button on the right that opens a menu:
   - *Rename pack* → dialog with "Pack name" and "Author" pre-filled with the current values (max 128 characters each, with counters). Save stays disabled while either trimmed field is empty or nothing changed; Save stores the trimmed values, Cancel changes nothing.
   - *Delete pack* → always asks first ("Delete this pack?"; WhatsApp keeps any copy it already has). Only the confirm button deletes the pack and goes back; Cancel or dismissing keeps it.
-- Name and author are edited only through *Rename pack* (no inline form). Tray icon: auto from first sticker; changeable.
+- Name and author are edited only through *Rename pack* (no inline form). The tray icon is not shown on this screen (it still exists for WhatsApp); see *Tray icon* below.
 - Sticker grid with long-press drag-reorder. Tap → bottom sheet: emojis, accessibility text, re-edit (if `editable`), delete.
 - Add menu: *Device* (in-app gallery), *Search GIFs*, *System picker*.
-- The tray row and the full sticker grid scroll together; the scroll content has bottom padding so the FAB never covers the last row of stickers.
+- There is no tray row. With stickers, the grid scrolls and has bottom padding so the FAB never covers the last row. With no stickers, a "No stickers yet" empty state is centred vertically and horizontally in the space below the header and above the bottom inset (like Home's "No packs yet").
 - Adding a sticker of the other kind follows the *Pack type* setting (§5.3).
 - "+" speed dial (FAB.Group) at the bottom right, above the safe-area inset; its icon becomes a close icon while open and its backdrop follows the theme. Labelled actions:
   - *Add sticker* → the Add menu above (until sticker creation lands it shows a "Sticker creation is coming in the next update" snackbar).
   - *Add to WhatsApp* when no installed WhatsApp has the pack, *Update in WhatsApp* when one does (re-sends it with `force: true`); WhatsApp icon; presses are ignored while a request is pending. When the pack has validation issues it opens a "Not ready for WhatsApp yet" dialog listing the issue messages with an OK button, and nothing is sent to WhatsApp. After a successful add/update the WhatsApp status is refreshed.
 - Every pack is editable (there are no read-only packs).
+- **Tray icon (approved; implemented in Plan 3):** the pack icon is generated automatically from the first sticker when the pack has none or has an auto icon. ⋮ → *Change pack icon* opens a sheet with *Choose one of this pack's stickers* (tap a sticker) or *Pick a photo* (gallery, square crop). The choice is converted to the required 96×96 PNG ≤ 50 KB via `makeTrayIcon` and bumps `imageDataVersion`. A custom icon is never replaced automatically when stickers are added; the pack stores a `trayIconSource: 'auto' | 'custom'` flag when this is implemented.
 
 ### Media sources (`app/media`) — tabs
 - **Device:** `expo-media-library` grid; filter chips *All / Images / GIFs / Videos*; multi-select. Permissions: `READ_MEDIA_IMAGES` + `READ_MEDIA_VIDEO` (Android 13+), `READ_EXTERNAL_STORAGE` (Android 9–12); handles Android 14 partial access (`READ_MEDIA_VISUAL_USER_SELECTED`) with a "Select more photos" action. If denied, shows a rationale and falls back to system Photo Picker / document picker.
