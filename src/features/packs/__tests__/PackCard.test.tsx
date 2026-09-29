@@ -14,12 +14,13 @@ jest.mock('expo-router', () => ({ useFocusEffect: (cb: () => void) => require('r
 jest.mock('@/store/packsStore', () => ({ packStorage: { fileUri: (id: string, f: string) => `file:///p/${id}/${f}` } }));
 
 describe('PackCard', () => {
-  it('shows name, author, count, type and added badge', async () => {
+  it('shows name, author, count and added badge but no pack type', async () => {
     const onPress = jest.fn();
     await renderWithProviders(<PackCard pack={makePack({ name: 'Cats', publisher: 'Ana', animated: true }, 5)} onPress={onPress} />);
     expect(screen.getByText('Cats')).toBeTruthy();
     expect(screen.getByText('Ana · 5 stickers')).toBeTruthy();
-    expect(screen.getByText('Animated')).toBeTruthy();
+    expect(screen.queryByText('Animated')).toBeNull();
+    expect(screen.queryByText('Static')).toBeNull();
     expect(await screen.findByText('Added')).toBeTruthy();
     await fireEvent.press(screen.getByText('Cats'));
     expect(onPress).toHaveBeenCalled();
@@ -30,7 +31,6 @@ describe('PackCard', () => {
     getWhatsAppStatus.mockResolvedValueOnce({ consumer: { installed: true, added: false }, business: { installed: false, added: false } });
     await renderWithProviders(<PackCard pack={makePack({ publisher: 'Ana' }, 1)} onPress={jest.fn()} />);
     expect(screen.getByText('Ana · 1 sticker')).toBeTruthy();
-    expect(screen.getByText('Static')).toBeTruthy();
     await screen.findByText('My Pack');
     expect(screen.queryByText('Added')).toBeNull();
   });
