@@ -23,9 +23,17 @@ describe('useAddToWhatsApp', () => {
     const pack = makePack({ id: 'p1', name: 'Cats' });
     const { result } = await renderHook(() => useAddToWhatsApp(pack, []));
     await act(() => result.current.add());
-    expect(mockAddToWhatsApp).toHaveBeenCalledWith('p1', 'Cats');
+    expect(mockAddToWhatsApp).toHaveBeenCalledWith('p1', 'Cats', { force: false });
     expect(result.current.message).toBe('Sticker pack added to WhatsApp.');
     expect(result.current.pending).toBe(false);
+  });
+
+  it('forces a re-send when updating a pack WhatsApp already has', async () => {
+    mockAddToWhatsApp.mockResolvedValue({ status: 'added' });
+    const { result } = await renderHook(() => useAddToWhatsApp(makePack({ id: 'p1', name: 'Cats' }), []));
+    await act(() => result.current.add({ force: true }));
+    expect(mockAddToWhatsApp).toHaveBeenCalledWith('p1', 'Cats', { force: true });
+    expect(result.current.message).toBe('Sticker pack updated in WhatsApp.');
   });
 
   it('shows a message instead of crashing when a request is already open', async () => {
@@ -63,7 +71,7 @@ describe('useAddToWhatsApp', () => {
     const { result } = await renderHook(() => useAddToWhatsApp(makePack({ id: 'p1', name: 'Old' }), [], options));
     await act(() => result.current.add());
     expect(order).toEqual(['flush', 'read']);
-    expect(mockAddToWhatsApp).toHaveBeenCalledWith('p1', 'Renamed');
+    expect(mockAddToWhatsApp).toHaveBeenCalledWith('p1', 'Renamed', { force: false });
   });
 
   it('re-validates the committed pack before calling WhatsApp', async () => {
