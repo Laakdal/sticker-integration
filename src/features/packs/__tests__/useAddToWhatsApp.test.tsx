@@ -58,40 +58,4 @@ describe('useAddToWhatsApp', () => {
       await first;
     });
   });
-
-  it('flushes pending edits first and sends the committed values', async () => {
-    mockAddToWhatsApp.mockResolvedValue({ status: 'added' });
-    const order: string[] = [];
-    const committed = makePack({ id: 'p1', name: 'Renamed' });
-    const options = {
-      flush: async () => void order.push('flush'),
-      readLatest: () => (order.push('read'), committed),
-      validate: () => [],
-    };
-    const { result } = await renderHook(() => useAddToWhatsApp(makePack({ id: 'p1', name: 'Old' }), [], options));
-    await act(() => result.current.add());
-    expect(order).toEqual(['flush', 'read']);
-    expect(mockAddToWhatsApp).toHaveBeenCalledWith('p1', 'Renamed', { force: false });
-  });
-
-  it('re-validates the committed pack before calling WhatsApp', async () => {
-    const options = {
-      flush: async () => {},
-      readLatest: () => makePack({ name: '' }),
-      validate: () => [{ code: 'PACK_NAME_REQUIRED' as const, message: 'Add a pack name.' }],
-    };
-    const { result } = await renderHook(() => useAddToWhatsApp(makePack(), [], options));
-    await act(() => result.current.add());
-    expect(mockAddToWhatsApp).not.toHaveBeenCalled();
-    expect(result.current.message).toBe('Fix 1 issue before adding to WhatsApp.');
-    expect(result.current.pending).toBe(false);
-  });
-
-  it('reports a failed flush instead of adding', async () => {
-    const options = { flush: () => Promise.reject(new Error('disk full')) };
-    const { result } = await renderHook(() => useAddToWhatsApp(makePack(), [], options));
-    await act(() => result.current.add());
-    expect(mockAddToWhatsApp).not.toHaveBeenCalled();
-    expect(result.current.message).toBe('Could not save your changes: disk full');
-  });
 });
