@@ -75,8 +75,8 @@ Quality rationale: both routes end in libwebp, so quality is decided by (a) sour
 src/features/
   packs/
     components/  PackList, PackCard, PackDetailsForm, TrayIconPicker, StickerGrid,
-                 StickerTile, StickerDetailsSheet, AddStickerMenu, ValidationBar,
-                 AddToWhatsAppButton, WhatsAppBadge
+                 StickerTile, StickerDetailsSheet, AddStickerMenu,
+                 AddToWhatsAppButton (extended FAB + issues dialog), WhatsAppBadge
     hooks/       usePack, usePackValidation, useWhatsAppStatus, useAddToWhatsApp
   editor/
     shared/      EmojiTagger, EncodedResultPreview, EncodeProgressDialog, FitFillToggle
@@ -153,6 +153,7 @@ scripts/                 generate-encoder-fixtures, generate-keystore
 <documentDirectory>/packs/<packId>/pack.json     single source of truth for the pack
 <documentDirectory>/packs/<packId>/tray.png      96×96 PNG, < 50 KB
 <documentDirectory>/packs/<packId>/<stickerId>.webp
+<documentDirectory>/packs/<packId>/<stickerId>.anim.webp   2-frame animated copy of a still sticker, mixed packs only (§5.3)
 <documentDirectory>/packs/<packId>/.src/<stickerId>/   static editor sources (source image + layers.json); never exported
 <documentDirectory>/quarantine/<packId>/         packs whose pack.json failed to parse
 <cacheDirectory>/...                             downloads, temp unzip, encode scratch
@@ -172,7 +173,7 @@ interface Pack {
   name: string;               // 1–128 chars
   publisher: string;          // 1–128 chars
   trayIcon: string;           // file name, 'tray.png'
-  animated: boolean;          // fixed by first sticker; all stickers must match
+  animated: boolean;          // what WhatsApp receives: true when the pack holds ≥1 animated sticker (§5.3)
   stickers: Sticker[];        // ordered
   imageDataVersion: number;   // incremented on every content change
   avoidCache: boolean;        // default false
@@ -196,7 +197,20 @@ interface Sticker {
 }
 ```
 
-### 5.3 Starter packs (removed)
+### 5.3 Pack types (Separate / Mixed)
+
+WhatsApp packs are either all still or all animated. Settings → Advanced → *Pack type* (§8 Settings) decides what happens when a sticker of the other kind is added to a pack:
+
+- **Separate (default)** — each pack is all still or all animated. Adding a mismatched sticker prompts: *Pick a still frame* (a GIF/video becomes one frame as a still sticker), *Put it in a new pack* (creates a pack of the other type, name pre-filled) or *Cancel*.
+- **Mixed** — a pack may contain both. When it contains ≥1 animated sticker, WhatsApp receives an animated pack in which each still sticker is served as a 2-frame animated copy, generated and cached next to the original as `<stickerId>.anim.webp`, regenerated when the sticker changes, ≤ 500 KB.
+
+The setting only governs what happens when adding a mismatched sticker: existing mixed packs keep working after switching back to Separate. The still-frame picker (Plan 4 animated editor, §8: *Animated* vs *Still frame* with a frame scrubber, same crop/rotate/flip/fit) is available in both modes.
+
+Unverified (check on device): whether WhatsApp accepts a previously-added still pack switching to animated on update.
+
+The setting UI and behaviour are implemented in Plans 3–4.
+
+### 5.4 Starter packs (removed)
 
 Removed on 2026-09-28. The app no longer ships packs, so there is no `origin: 'bundled'`, no read-only pack mode and no "Duplicate to edit". Every pack is editable.
 
@@ -219,7 +233,7 @@ Installs that ran an older version still hold the copied starter packs. On every
 
 **JS API**
 
-- `addToWhatsApp(packId: string, name: string): Promise<{ status: 'added' | 'cancelled' | 'error'; message?: string }>` — fires `com.whatsapp.intent.action.ENABLE_STICKER_PACK` with extras `sticker_pack_id`, `sticker_pack_authority`, `sticker_pack_name`. Uses a chooser when both `com.whatsapp` and `com.whatsapp.w4b` are installed. Surfaces WhatsApp's `validation_error` extra.
+- `addToWhatsApp(packId: string, name: string, options?: { force?: boolean }): Promise<{ status: 'added' | 'cancelled' | 'error'; message?: string }>` — fires `com.whatsapp.intent.action.ENABLE_STICKER_PACK` with extras `sticker_pack_id`, `sticker_pack_authority`, `sticker_pack_name` at the installed WhatsApp app(s) that lack the pack, and resolves `added` without launching when every installed app already has it. With `force: true` (Update) it targets every installed app even if already added, so the pack is sent again. Uses a chooser when both `com.whatsapp` and `com.whatsapp.w4b` are targeted, else `setPackage`. Surfaces WhatsApp's `validation_error` extra.
 - `getWhatsAppStatus(packId: string): Promise<{ consumer: { installed: boolean; added: boolean }; business: { installed: boolean; added: boolean } }>` — via the whitelist provider `content://com.whatsapp.provider.sticker_whitelist_check/is_whitelisted` (and the `.w4b` equivalent).
 - Manifest `<queries>` for `com.whatsapp` and `com.whatsapp.w4b`.
 
@@ -289,14 +303,15 @@ Error codes: `DECODE_FAILED`, `OUT_OF_MEMORY`, `TOO_LARGE`, `CANCELLED`, `IO_ERR
 ## 8. Screens and flows
 
 ### Home (`app/index`)
-A single "My packs" section, with an empty state ("No packs yet") when there are none. Card: tray icon, name, author, sticker count, static/animated chip, "Added to WhatsApp ✓" badge (from `getWhatsAppStatus`). FAB → new pack. Overflow → Import/Export, Settings.
+A single "My packs" section, with an empty state ("No packs yet") when there are none. Card: tray icon, name, author, sticker count, "Added to WhatsApp ✓" badge (from `getWhatsAppStatus`). FAB → new pack. Overflow → Import/Export, Settings.
 
 ### Create/Edit Pack (`app/pack/[id]`)
 - Name, author, tray icon (auto from first sticker; changeable).
 - Sticker grid with long-press drag-reorder. Tap → bottom sheet: emojis, accessibility text, re-edit (if `editable`), delete.
 - Add menu: *Device* (in-app gallery), *Search GIFs*, *System picker*.
-- Static/animated is fixed by the first sticker; adding a mismatched type offers "Create a new animated/static pack with this".
-- Live validation bar (count x/30, issue list); "Add to WhatsApp" disabled until valid.
+- Pack details (name/author form, tray) and the full sticker grid scroll together; the scroll content has bottom padding so the FAB never covers the last row of stickers.
+- Adding a sticker of the other kind follows the *Pack type* setting (§5.3).
+- Extended FAB at the bottom right, above the safe-area inset: "Add to WhatsApp" when no installed WhatsApp has the pack, "Update in WhatsApp" when one does (re-sends it with `force: true`); WhatsApp icon; loading and disabled while a request is pending. It stays enabled when the pack has validation issues: tapping it then opens a "Not ready for WhatsApp yet" dialog listing the issue messages with an OK button, and nothing is sent to WhatsApp. After a successful add/update the WhatsApp status is refreshed.
 - Every pack is editable (there are no read-only packs).
 
 ### Media sources (`app/media`) — tabs
@@ -333,9 +348,10 @@ Output is always a 512×512 canvas, and the source aspect ratio is **always pres
 See §9.
 
 ### Settings (`app/settings`)
-An M3 list (a drawer screen) with three `List.Section`s — **API**, **Display**, **About** — each holding one row with a leading icon, a title and a one-line summary of its current values (from the pure `settingsSummaries`); the API and Display rows open a sub-screen pushed on the root Stack (header with back arrow, no drawer):
+An M3 list (a drawer screen) with four `List.Section`s — **API**, **Display**, **Advanced**, **About** — each holding one row with a leading icon, a title and a one-line summary of its current values (from the pure `settingsSummaries`); the API and Display rows open a sub-screen pushed on the root Stack (header with back arrow, no drawer):
 - **API keys** (`/settings/gif`) — three `List.Section`s: **Klipy** and **Giphy**, each with that provider's API key override (default from `.env`), and **Content rating**. Summary e.g. "Klipy: key set · Giphy: no key · PG-13" (a provider counts as "key set" when it has a saved key or an `.env` key).
 - **Appearance** (`/settings/display`) — *Theme* (a dropdown `List.Item` + `Menu`: Light / Dark / Auto (same as system); persisted as `themeMode`, default Auto; applies to the Paper and navigation themes, drawer, headers and status bar), *Use wallpaper colours* (Material You; disabled with "Needs Android 12 or newer" on older devices), *Reduce motion*. Summary e.g. "Auto theme · Wallpaper colours on · Reduce motion off".
+- **Advanced** — *Pack type*: *Separate* (default) or *Mixed*, see §5.3. Implemented in Plans 3–4.
 - **About** — app name and version; does not navigate.
 
 The author used to create a pack is not a Settings category: the "New pack" dialog (§8 Home) pre-fills its author field with `lastPublisher` (the author last used) and saves it there on Create.
@@ -364,9 +380,9 @@ Planned: storage used + clear cache.
 
 ## 10. Validation (`services/validation.ts`)
 
-One rule set, used by the validation bar, importer and pre-flight before "Add to WhatsApp"; the ContentProvider has its own minimal native check.
+One rule set, used by the pack screen's issues dialog, importer and pre-flight before "Add to WhatsApp"; the ContentProvider has its own minimal native check.
 
-**Pack rules:** 3–30 stickers; name and publisher non-empty, ≤128 chars; id matches `^[A-Za-z0-9_.-]{1,128}$`; tray icon 96×96 PNG < 50 KB; all stickers match `pack.animated`; optional URLs/email well-formed.
+**Pack rules:** 3–30 stickers; name and publisher non-empty, ≤128 chars; id matches `^[A-Za-z0-9_.-]{1,128}$`; tray icon 96×96 PNG < 50 KB; all stickers match `pack.animated` (except in mixed packs, §5.3); optional URLs/email well-formed.
 
 **Sticker rules:** 512×512 WebP; static < 100 KB; animated < 500 KB; animated frame duration ≥ 8 ms; total duration ≤ 10 s; 1–3 emojis; accessibility text ≤ 125 (static) / ≤ 255 (animated).
 
