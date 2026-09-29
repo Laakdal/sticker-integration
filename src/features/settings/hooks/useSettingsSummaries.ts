@@ -16,6 +16,7 @@ export function useSettingsSummaries() {
         contentRating: s.contentRating,
         reduceMotion: s.reduceMotion,
         useDynamicColor: s.useDynamicColor,
+        themeMode: s.themeMode,
         lastPublisher: s.lastPublisher,
       }),
     ),
