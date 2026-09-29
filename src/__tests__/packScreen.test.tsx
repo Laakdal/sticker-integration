@@ -64,15 +64,15 @@ function HomeStub() {
 }
 
 /** Seeds pack `p1` (saved, so store mutations persist) and opens its screen above the home stub. */
-async function openPack({ withTray = true } = {}) {
-  const pack = makePack({ id: 'p1', name: 'Cats', publisher: 'Jane' });
+async function openPack({ withTray = true, stickers = 3 } = {}) {
+  const pack = makePack({ id: 'p1', name: 'Cats', publisher: 'Jane' }, stickers);
   await packStorage.save(pack);
   if (withTray) memoryFiles.files.set(packStorage.fileUri('p1', pack.trayIcon), 'x'.repeat(1000));
   usePacksStore.setState({ packs: { p1: pack } });
   const rendered = renderRouter({ _layout: TestLayout, index: HomeStub, 'pack/[id]': PackScreen }, { initialUrl: '/' });
   await rendered;
   await act(async () => router.push('/pack/p1'));
-  await screen.findByLabelText('Tray icon');
+  await screen.findByLabelText('More options');
   return { pathname: () => rendered.getPathname() };
 }
 
@@ -111,6 +111,27 @@ beforeEach(() => {
 afterEach(() => jest.useRealTimers());
 
 describe('pack screen', () => {
+  describe('layout', () => {
+    it('shows a "No stickers yet" empty state when the pack has no stickers', async () => {
+      await openPack({ stickers: 0 });
+      expect(screen.getByText('No stickers yet')).toBeTruthy();
+    });
+
+    it('never shows the tray row or its hint text', async () => {
+      await openPack({ stickers: 0 });
+      expect(screen.queryByText(/Tray icon shown in the WhatsApp sticker tray/)).toBeNull();
+      expect(screen.queryByLabelText('Tray icon')).toBeNull();
+    });
+
+    it('shows no tray hint or empty state when the pack has stickers', async () => {
+      await openPack();
+      expect(screen.queryByText('No stickers yet')).toBeNull();
+      expect(screen.queryByText(/Tray icon shown in the WhatsApp sticker tray/)).toBeNull();
+      expect(screen.queryByText('Added to WhatsApp')).toBeNull();
+      expect(screen.queryByLabelText('Tray icon')).toBeNull();
+    });
+  });
+
   describe('overflow menu', () => {
     it('offers Rename pack and Delete pack instead of an inline details form', async () => {
       await openPack();
@@ -202,8 +223,9 @@ describe('pack screen', () => {
     it('offers Update in WhatsApp once WhatsApp has the pack and forces the re-send', async () => {
       mockGetWhatsAppStatus.mockResolvedValue(ADDED);
       await openPack();
-      await screen.findByText('Added to WhatsApp');
+      await waitFor(() => expect(mockGetWhatsAppStatus).toHaveBeenCalledWith('p1'));
       await openSpeedDial();
+      await screen.findByRole('button', { name: 'Update in WhatsApp' });
       expect(screen.queryByRole('button', { name: 'Add to WhatsApp' })).toBeNull();
       await pressAction('Update in WhatsApp');
       await waitFor(() => expect(mockAddToWhatsApp).toHaveBeenCalledWith('p1', 'Cats', { force: true }));
