@@ -8,6 +8,10 @@ import { renderWithProviders } from '@/test-utils/render';
 
 const settings = () => useSettingsStore.getState();
 
+/** Paper's segmented buttons expose the selected segment through `accessibilityState.checked`. */
+const expectSelected = (name: string) =>
+  expect(screen.getByRole('button', { name }).props.accessibilityState).toMatchObject({ checked: true });
+
 let supported: jest.ReplaceProperty<boolean> | undefined;
 beforeEach(() => useSettingsStore.setState(DEFAULT_SETTINGS));
 afterEach(() => supported?.restore());
@@ -36,6 +40,21 @@ describe('Display settings', () => {
 
     await fireEvent.press(screen.getByText('Use wallpaper colours'));
     expect(settings().useDynamicColor).toBe(true);
+  });
+
+  it('reads and writes the theme', async () => {
+    await renderWithProviders(<DisplaySettingsScreen />);
+    expect(screen.getByText('Theme')).toBeTruthy();
+    expectSelected('Auto');
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Dark' }));
+    expect(settings().themeMode).toBe('dark');
+    expectSelected('Dark');
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Light' }));
+    expect(settings().themeMode).toBe('light');
+    await fireEvent.press(screen.getByRole('button', { name: 'Auto' }));
+    expect(settings().themeMode).toBe('system');
   });
 
   it('reads and writes reduce motion', async () => {
