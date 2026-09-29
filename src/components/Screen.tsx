@@ -1,12 +1,19 @@
 import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import { useTheme } from 'react-native-paper';
 
-export function Screen({ children, scroll = false }: { children: ReactNode; scroll?: boolean }) {
+interface Props {
+  children: ReactNode;
+  scroll?: boolean;
+  /** Extra style for the scroll content, e.g. bottom padding that keeps a FAB clear of the last row. */
+  contentStyle?: StyleProp<ViewStyle>;
+}
+
+export function Screen({ children, scroll = false, contentStyle }: Props) {
   const { colors } = useTheme();
   const style = [styles.root, { backgroundColor: colors.background }];
   return scroll ? (
-    <ScrollView style={style} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <ScrollView style={style} contentContainerStyle={[styles.content, contentStyle]} keyboardShouldPersistTaps="handled">
       {children}
     </ScrollView>
   ) : (
