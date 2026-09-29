@@ -1,16 +1,55 @@
-import { Button } from 'react-native-paper';
+import { useState } from 'react';
+import { type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
+import { Button, Dialog, FAB, Portal, Text } from 'react-native-paper';
 
-export function AddToWhatsAppButton({ disabled, pending, onPress }: { disabled: boolean; pending: boolean; onPress: () => void }) {
+import type { ValidationIssue } from '@/services/validation';
+
+interface Props {
+  /** The pack is already in an installed WhatsApp: the action re-sends it as an update. */
+  added: boolean;
+  issues: ValidationIssue[];
+  pending: boolean;
+  onAdd: (options: { force: boolean }) => void;
+  style?: StyleProp<ViewStyle>;
+}
+
+/** Extended FAB that adds (or updates) the pack in WhatsApp, or explains what still blocks it. */
+export function AddToWhatsAppButton({ added, issues, pending, onAdd, style }: Props) {
+  const [showIssues, setShowIssues] = useState(false);
+  const label = added ? 'Update in WhatsApp' : 'Add to WhatsApp';
+
+  function onPress() {
+    if (issues.length > 0) setShowIssues(true);
+    else onAdd({ force: added });
+  }
+
   return (
-    <Button
-      mode="contained"
-      icon="whatsapp"
-      onPress={onPress}
-      disabled={disabled || pending}
-      loading={pending}
-      accessibilityLabel="Add to WhatsApp"
-    >
-      Add to WhatsApp
-    </Button>
+    <>
+      <FAB icon="whatsapp" label={label} accessibilityLabel={label} onPress={onPress} disabled={pending} loading={pending} style={style} />
+      <Portal>
+        <Dialog visible={showIssues} onDismiss={() => setShowIssues(false)}>
+          <Dialog.Title>Not ready for WhatsApp yet</Dialog.Title>
+          <Dialog.Content style={styles.list}>
+            {issues.map((issue, i) => (
+              <View key={`${issue.code}-${issue.stickerId ?? i}`} style={styles.issueRow}>
+                <Text variant="bodyMedium">{'•'}</Text>
+                <Text variant="bodyMedium" style={styles.issueText}>
+                  {issue.message}
+                </Text>
+              </View>
+            ))}
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setShowIssues(false)}>OK</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+    </>
   );
 }
+
+const styles = StyleSheet.create({
+  list: { gap: 6 },
+  issueRow: { flexDirection: 'row', gap: 8 },
+  issueText: { flex: 1 },
+});
