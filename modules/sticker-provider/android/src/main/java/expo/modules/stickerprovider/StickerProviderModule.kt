@@ -6,6 +6,14 @@ import expo.modules.kotlin.Promise
 import expo.modules.kotlin.functions.Queues
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
+import expo.modules.kotlin.records.Field
+import expo.modules.kotlin.records.Record
+
+/** Optional third argument of addToWhatsApp; when omitted, the call is a plain add. */
+class AddOptions : Record {
+  /** Launch WhatsApp even when every installed WhatsApp already has the pack (Update). */
+  @Field val force: Boolean = false
+}
 
 class StickerProviderModule : Module() {
   private var pendingAdd: Promise? = null
@@ -20,7 +28,7 @@ class StickerProviderModule : Module() {
       WhatsAppStatus.forPack(context, authority, packId).toMap()
     }
 
-    AsyncFunction("addToWhatsApp") { packId: String, name: String, promise: Promise ->
+    AsyncFunction("addToWhatsApp") { packId: String, name: String, options: AddOptions?, promise: Promise ->
       val activity = appContext.currentActivity
       if (activity == null) {
         promise.reject("NO_ACTIVITY", "No foreground activity to launch WhatsApp from.", null)
@@ -30,14 +38,12 @@ class StickerProviderModule : Module() {
         promise.reject("BUSY", "An add-to-WhatsApp request is already in progress.", null)
         return@AsyncFunction
       }
-      val status = WhatsAppStatus.forPack(context, authority, packId)
-      if (!status.consumer.installed && !status.business.installed) {
+      val target = LaunchTarget.forStatus(WhatsAppStatus.forPack(context, authority, packId), options?.force ?: false)
+      if (target == LaunchTarget.NotInstalled) {
         promise.resolve(errorResult(REASON_NOT_INSTALLED, "WhatsApp is not installed."))
         return@AsyncFunction
       }
-      val needConsumer = status.consumer.installed && !status.consumer.added
-      val needBusiness = status.business.installed && !status.business.added
-      if (!needConsumer && !needBusiness) {
+      if (target == LaunchTarget.AlreadyAdded) {
         promise.resolve(mapOf("status" to "added"))
         return@AsyncFunction
       }
@@ -46,10 +52,9 @@ class StickerProviderModule : Module() {
         putExtra(EXTRA_AUTHORITY, authority)
         putExtra(EXTRA_PACK_NAME, name)
       }
-      val launch = when {
-        needConsumer && needBusiness -> Intent.createChooser(intent, "Add to WhatsApp")
-        needConsumer -> intent.setPackage(WhatsAppStatus.CONSUMER)
-        else -> intent.setPackage(WhatsAppStatus.BUSINESS)
+      val launch = when (target) {
+        is LaunchTarget.App -> intent.setPackage(target.packageName)
+        else -> Intent.createChooser(intent, "Add to WhatsApp") // LaunchTarget.Chooser
       }
       pendingAdd = promise
       try {
