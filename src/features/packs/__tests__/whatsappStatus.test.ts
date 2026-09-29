@@ -16,6 +16,12 @@ describe('whatsappStatus', () => {
     expect(describeAddResult({ status: 'error' })).toBe('WhatsApp rejected the pack.');
   });
 
+  it('describes update results', () => {
+    expect(describeAddResult({ status: 'added' }, true)).toBe('Sticker pack updated in WhatsApp.');
+    expect(describeAddResult({ status: 'cancelled' }, true)).toBe('Sticker pack was not updated.');
+    expect(describeAddResult({ status: 'error', message: 'Bad tray' }, true)).toBe('WhatsApp rejected the pack: Bad tray');
+  });
+
   it('shows native launch problems without blaming the pack', () => {
     expect(describeAddResult({ status: 'error', reason: 'not_installed', message: 'WhatsApp is not installed.' })).toBe('WhatsApp is not installed.');
     expect(describeAddResult({ status: 'error', reason: 'not_installed' })).toBe('WhatsApp is not installed.');
