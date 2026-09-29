@@ -56,6 +56,16 @@ describe('settings store', () => {
     expect(createSettingsStore(storage).getState().useDynamicColor).toBe(false);
   });
 
+  it('defaults the theme to system, including for old blobs, and keeps a saved choice', () => {
+    expect(createSettingsStore(memoryStorage()).getState().themeMode).toBe('system');
+
+    const old = memoryStorage({ settings: JSON.stringify({ state: { klipyApiKey: 'k' }, version: 1 }) });
+    expect(createSettingsStore(old).getState().themeMode).toBe('system');
+
+    const saved = memoryStorage({ settings: JSON.stringify({ state: { themeMode: 'dark' }, version: 1 }) });
+    expect(createSettingsStore(saved).getState().themeMode).toBe('dark');
+  });
+
   it('drops retired settings saved by an older version', () => {
     const storage = memoryStorage({
       settings: JSON.stringify({ state: { klipyApiKey: 'saved-key', bundledPacksVersion: 3 }, version: 1 }),
