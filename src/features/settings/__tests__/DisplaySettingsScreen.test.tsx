@@ -1,5 +1,5 @@
 import * as material3 from '@pchmn/expo-material3-theme';
-import { fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 
 import DisplaySettingsScreen from '../../../../app/settings/display';
 import { DEFAULT_SETTINGS } from '@/store/createSettingsStore';
@@ -7,10 +7,6 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { renderWithProviders } from '@/test-utils/render';
 
 const settings = () => useSettingsStore.getState();
-
-/** Paper's segmented buttons expose the selected segment through `accessibilityState.checked`. */
-const expectSelected = (name: string) =>
-  expect(screen.getByRole('button', { name }).props.accessibilityState).toMatchObject({ checked: true });
 
 let supported: jest.ReplaceProperty<boolean> | undefined;
 beforeEach(() => useSettingsStore.setState(DEFAULT_SETTINGS));
@@ -42,19 +38,23 @@ describe('Display settings', () => {
     expect(settings().useDynamicColor).toBe(true);
   });
 
-  it('reads and writes the theme', async () => {
+  it('shows the theme as a dropdown and saves the chosen option', async () => {
     await renderWithProviders(<DisplaySettingsScreen />);
     expect(screen.getByText('Theme')).toBeTruthy();
-    expectSelected('Auto');
+    expect(screen.getByText('Auto (same as system)')).toBeTruthy();
+    expect(screen.queryByText('Dark')).toBeNull();
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Dark' }));
+    // Paper's Menu runs a hide animation on mount that would close a menu opened before it ends.
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 300)));
+    await fireEvent.press(screen.getByText('Theme'));
+    expect(await screen.findByText('Dark')).toBeTruthy();
+    expect(screen.getByText('Light')).toBeTruthy();
+
+    await fireEvent.press(screen.getByText('Dark'));
     expect(settings().themeMode).toBe('dark');
-    expectSelected('Dark');
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Light' }));
-    expect(settings().themeMode).toBe('light');
-    await fireEvent.press(screen.getByRole('button', { name: 'Auto' }));
-    expect(settings().themeMode).toBe('system');
+    await waitFor(() => expect(screen.queryByText('Light')).toBeNull());
+    expect(screen.getByText('Dark')).toBeTruthy();
+    expect(screen.queryByText('Auto (same as system)')).toBeNull();
   });
 
   it('reads and writes reduce motion', async () => {
